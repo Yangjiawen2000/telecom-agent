@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+langgraph
+langchain
+langchain-openai
+redis
+pymilvus
+psycopg2-binary
+pydantic-settings
+python-dotenv
+sqlalchemy
+alembic
+pydantic[email]
+python-multipart
+httpx
+tenacity
+faker
