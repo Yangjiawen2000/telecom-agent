@@ -14,3 +14,9 @@ ps:
 
 clean:
 	docker-compose down -v
+
+mock-api:
+	python3 app/tools/mock_api.py
+
+ingest:
+	export PYTHONPATH=$$PYTHONPATH:. && python3 scripts/ingest_knowledge.py

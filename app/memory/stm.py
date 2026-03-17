@@ -112,6 +112,10 @@ class ShortTermMemory:
         """快照当前状态"""
         return await self.redis.hgetall(self.key)
 
+    async def clear(self):
+        """清除当前会话的所有消息"""
+        await self.redis.delete(self.key)
+
     async def restore(self, snapshot: Dict[str, str]):
         """从快照恢复"""
         await self.redis.delete(self.key)
