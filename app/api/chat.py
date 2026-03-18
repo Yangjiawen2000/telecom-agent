@@ -11,6 +11,7 @@ from app.memory.stm import ShortTermMemory
 from app.memory.ltm import LongTermMemory
 from app.intent.classifier import IntentClassifier, Intent
 from app.tools.registry import ToolRegistry, ToolResult
+from app.tools.init_tools import register_all_tools
 from app.config import settings
 
 import redis.asyncio as redis
@@ -31,25 +32,8 @@ ltm = LongTermMemory()
 classifier = IntentClassifier()
 registry = ToolRegistry()
 
-# 模拟注册一些工具到注册表（后续可移动到专门的加载函数中）
-# 这里简单演示，实际业务中会从 mock_api 对应的 client 函数注册
-async def mock_get_user(phone: str):
-    import httpx
-    async with httpx.AsyncClient() as client:
-        try:
-            resp = await client.get(f"http://localhost:8001/user/{phone}", timeout=5.0)
-            resp.raise_for_status()
-            return resp.json()
-        except Exception as e:
-            logger.error(f"Tool call failed: {e}")
-            raise
-
-registry.register(
-    "get_user_info", 
-    mock_get_user, 
-    "查询欠费、套餐等用户信息", 
-    {"phone": "str"}
-)
+# 注册所有工具到注册表
+register_all_tools(registry)
 
 class ChatRequest(BaseModel):
     session_id: str
@@ -75,7 +59,7 @@ async def event_generator(request: ChatRequest, background_tasks: BackgroundTask
         session_id = request.session_id
         user_id = request.user_id
         user_input = request.message
-
+        
         # 1. 发送思考状态
         yield f"data: {json.dumps({'type': 'thinking', 'content': '正在加载上下文与识别意图...'}, ensure_ascii=False)}\n\n"
 
@@ -86,7 +70,10 @@ async def event_generator(request: ChatRequest, background_tasks: BackgroundTask
         context_str = f"用户画像：{user_profile}\n会话历史：{history}"
 
         # 3. 意图识别
-        intent_res = await classifier.classify(user_input, history=history)
+        intent_res = await classifier.classify(
+            user_input, 
+            history=history
+        )
         yield f"data: {json.dumps({'type': 'thinking', 'content': f'识别到意图: {intent_res.intent} (置信度: {intent_res.confidence:.2f})'}, ensure_ascii=False)}\n\n"
 
         # 4. 根据意图执行工具 (演示场景)
@@ -102,7 +89,10 @@ async def event_generator(request: ChatRequest, background_tasks: BackgroundTask
             
             if phone:
                 yield f"data: {json.dumps({'type': 'thinking', 'content': f'正在查询号码 {phone} 的业务数据...'}, ensure_ascii=False)}\n\n"
-                res = await registry.call("get_user_info", {"phone": phone})
+                res = await registry.call(
+                    "get_user_info", 
+                    {"phone": phone}
+                )
                 if res.success:
                     tool_output = res.data
                 else:
@@ -128,21 +118,32 @@ async def event_generator(request: ChatRequest, background_tasks: BackgroundTask
         full_response = ""
         yield f"data: {json.dumps({'type': 'thinking', 'content': '生成回复中...'}, ensure_ascii=False)}\n\n"
         
-        # 模拟流式 (由于目前 app.llm.chat 不支持真正的流式，我们暂且返回整段，后续再优化 chat 函数支持流式)
-        # 实际上 chat 函数已经在之前的实现中支持了流式（如果传入 stream=True）
+        # 6. 如果是推荐意图，额外下发卡片数据
+        if intent_res.intent == Intent.RECOMMEND:
+            recommend_cards = ["超值 5G 套餐 (49元/月)", "大流量王卡 (79元/月)", "全家享融合版 (129元/月)"]
+            yield f"data: {json.dumps({'type': 'card', 'content': recommend_cards}, ensure_ascii=False)}\n\n"
+        
+        # 7. 流式生成回复
         from app.llm import chat as chat_func
         
-        tokens_gen = await chat_func(messages, stream=True)
+        tokens_gen = await chat_func(
+            messages, 
+            stream=True
+        )
         async for token in tokens_gen:
             full_response += token
             yield f"data: {json.dumps({'type': 'token', 'content': token}, ensure_ascii=False)}\n\n"
 
-        # 6. 存储回 STM (不使用 BackgroundTasks 以确保在 done 之前完成)
+        # 8. 存储回 STM
         await stm.add_message("user", user_input)
-        is_anchor = bool(intent_res.entities)
-        await stm.add_message("assistant", full_response, {"is_anchor": is_anchor})
+        # 只要有实体，或者是推荐/办理/账单等关键意图，就标记为锚点
+        is_anchor = bool(intent_res.entities) or intent_res.intent in [Intent.RECOMMEND, Intent.HANDLE_BIZ, Intent.QUERY_BILL]
+        await stm.add_message("assistant", full_response, {
+            "is_anchor": is_anchor,
+            "intent": intent_res.intent.value if isinstance(intent_res.intent, Intent) else str(intent_res.intent)
+        })
         
-        # 每 5 轮触发一次 distill (简化演示：如果历史 > 5 条就触发)
+        # 每 5 轮触发一次 distill
         if len(history) >= 5:
             background_tasks.add_task(stm.distill)
 
@@ -161,6 +162,15 @@ async def get_chat_history(session_id: str):
     history = await stm.get_history()
     await redis_client.aclose()
     return {"session_id": session_id, "history": history}
+
+@router.get("/chat/anchors/{session_id}")
+async def get_anchors(session_id: str):
+    redis_client = get_redis_client()
+    stm = ShortTermMemory(session_id, redis_client)
+    anchors = await stm.get_anchors()
+    await redis_client.aclose()
+    # 格式化输出，只保留内容
+    return {"session_id": session_id, "anchors": [a["content"][:30] + "..." if len(a["content"]) > 30 else a["content"] for a in anchors]}
 
 @router.delete("/chat/session/{session_id}")
 async def clear_session(session_id: str, user_id: str):

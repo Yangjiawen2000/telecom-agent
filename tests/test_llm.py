@@ -23,6 +23,9 @@ async def test_chat_response():
 async def test_chat_streaming():
     # Mocking streaming response
     class MockStreamResponse:
+        def __init__(self):
+            self.status_code = 200
+            
         async def __aenter__(self):
             return self
         async def __aexit__(self, exc_type, exc_val, exc_tb):

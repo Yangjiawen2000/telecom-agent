@@ -86,7 +86,8 @@ class IntentClassifier:
             # 处理可能的 markdown 标签
             clean_json = response_text.strip().replace("```json", "").replace("```", "").strip()
             data = json.loads(clean_json)
-            return IntentResult(**data)
+            result = IntentResult(**data)
+            return result
         except Exception as e:
             logger.error(f"Intent classification failed: {e}")
             return IntentResult(

@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class ToolResult(BaseModel):
     success: bool
-    data: Optional[Dict[str, Any]] = None
+    data: Optional[Any] = None
     error: Optional[str] = None
     retries: int = 0
     fallback: Optional[str] = None
@@ -31,6 +31,9 @@ class ToolRegistry:
 
     async def call(self, name: str, params: Dict[str, Any], max_retries: int = 3) -> ToolResult:
         """统一调用入口，包含重试和容错逻辑"""
+        
+        start_time = time.time()
+
         if name not in self.tools:
             return ToolResult(success=False, error=f"Tool {name} not found")
 

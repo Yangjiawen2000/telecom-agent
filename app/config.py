@@ -26,7 +26,8 @@ class Settings(BaseSettings):
     LLM_PROVIDER: str = "kimi"  # kimi or qwen
     KIMI_API_KEY: str = "dummy"
     KIMI_BASE_URL: str = "https://api.moonshot.cn/v1"
-    DASHSCOPE_API_KEY: str = "dummy"
+    QWEN_API_KEY: str = "dummy"
+    QWEN_BASE_URL: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     
     # Models
     KIMI_MODEL: str = "kimi-k2.5"
