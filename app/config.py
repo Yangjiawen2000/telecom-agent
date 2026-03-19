@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     
     # Models
     KIMI_MODEL: str = "kimi-k2.5"
-    QWEN_MODEL: str = "qwen-max"
+    QWEN_MODEL: str = "qwen3-max"
     EMBEDDING_MODEL: str = "text-embedding-v4"
 
     # Security

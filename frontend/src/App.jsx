@@ -1,23 +1,27 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const App = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [status, setStatus] = useState('');
   const [anchors, setAnchors] = useState([]);
-  const [sessionId, setSessionId] = useState(
-    localStorage.getItem('telecom_session_id') || `session_${Math.random().toString(36).substr(2, 9)}`
+  const [sessionId, setSessionId] = useState(() => {
+    const storedUserId = localStorage.getItem('telecom_user_id') || 'user_01';
+    const storedMap = localStorage.getItem('telecom_user_sessions');
+    const map = storedMap ? JSON.parse(storedMap) : {};
+    return map[storedUserId] || `session_${Math.random().toString(36).substr(2, 9)}`;
+  });
+  const [userId, setUserId] = useState(
+    localStorage.getItem('telecom_user_id') || 'user_01'
   );
+  const [userSessionMap, setUserSessionMap] = useState(() => {
+    const stored = localStorage.getItem('telecom_user_sessions');
+    return stored ? JSON.parse(stored) : {};
+  });
 
   const scrollRef = useRef(null);
 
-  useEffect(() => {
-    localStorage.setItem('telecom_session_id', sessionId);
-    fetchHistory();
-    fetchAnchors();
-  }, [sessionId]);
-
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     try {
       const response = await fetch(`http://localhost:8000/chat/history/${sessionId}`);
       const data = await response.json();
@@ -32,9 +36,9 @@ const App = () => {
     } catch (err) {
       console.error("Failed to fetch history:", err);
     }
-  };
+  }, [sessionId]);
 
-  const fetchAnchors = async () => {
+  const fetchAnchors = useCallback(async () => {
     try {
       const response = await fetch(`http://localhost:8000/chat/anchors/${sessionId}`);
       const data = await response.json();
@@ -43,6 +47,35 @@ const App = () => {
       }
     } catch (err) {
       console.error("Failed to fetch anchors:", err);
+    }
+  }, [sessionId]);
+
+  useEffect(() => {
+    localStorage.setItem('telecom_session_id', sessionId);
+    localStorage.setItem('telecom_user_id', userId);
+    fetchHistory();
+    fetchAnchors();
+  }, [sessionId, userId, fetchHistory, fetchAnchors]);
+
+  const handleUserIdChange = (newUserId) => {
+    if (newUserId !== userId) {
+      let newSessionId;
+      if (userSessionMap[newUserId]) {
+        // 如果是已存在的用户，使用之前的sessionId
+        newSessionId = userSessionMap[newUserId];
+      } else {
+        // 新用户，生成新sessionId
+        newSessionId = `session_${Math.random().toString(36).substr(2, 9)}`;
+        const updatedMap = { ...userSessionMap, [newUserId]: newSessionId };
+        setUserSessionMap(updatedMap);
+        localStorage.setItem('telecom_user_sessions', JSON.stringify(updatedMap));
+      }
+      setUserId(newUserId);
+      setSessionId(newSessionId);
+      // 切换用户时清除当前显示，但后端有记忆
+      setMessages([]);
+      setAnchors([]);
+      setStatus('');
     }
   };
 
@@ -69,7 +102,7 @@ const App = () => {
         },
         body: JSON.stringify({
           session_id: sessionId,
-          user_id: 'user_01', // 假定用户 ID
+          user_id: userId,
           message: messageText,
         }),
       });
@@ -136,7 +169,7 @@ const App = () => {
   const startNewChat = async () => {
     try {
       // 1. 调用后端删除接口
-      await fetch(`http://localhost:8000/chat/session/${sessionId}?user_id=user_01`, {
+      await fetch(`http://localhost:8000/chat/session/${sessionId}?user_id=${userId}`, {
         method: 'DELETE'
       });
       
@@ -194,9 +227,21 @@ const App = () => {
       <div className="flex-1 flex flex-col relative max-w-4xl mx-auto w-full shadow-2xl bg-white">
         {/* Header */}
         <div className="p-4 border-b flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10">
-          <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            电信业务全能助手
-          </h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              电信业务全能助手
+            </h1>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-600">用户ID:</label>
+              <input
+                type="text"
+                value={userId}
+                onChange={(e) => handleUserIdChange(e.target.value)}
+                className="px-2 py-1 border border-gray-300 rounded text-sm w-24"
+                placeholder="输入用户ID"
+              />
+            </div>
+          </div>
           {status && (
             <div className="flex items-center gap-2 text-blue-500 text-sm font-medium animate-fadeIn">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>

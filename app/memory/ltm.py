@@ -75,6 +75,26 @@ class LongTermMemory:
             up_col.create_index("embedding", index_params)
             logger.info("Created collection: user_profile")
 
+        # 3. Graph Relationships Collection (New for GraphRAG)
+        rel_fields = [
+            FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
+            FieldSchema(name="source", dtype=DataType.VARCHAR, max_length=512),
+            FieldSchema(name="target", dtype=DataType.VARCHAR, max_length=512),
+            FieldSchema(name="relation", dtype=DataType.VARCHAR, max_length=256),
+            FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=1024), # Source+Relation+Target embedding
+        ]
+        rel_schema = CollectionSchema(rel_fields, "Knowledge graph relationships")
+        
+        if not utility.has_collection("graph_relationships"):
+            rel_col = Collection("graph_relationships", rel_schema)
+            index_params = {
+                "metric_type": "IP",
+                "index_type": "IVF_FLAT",
+                "params": {"nlist": 128}
+            }
+            rel_col.create_index("embedding", index_params)
+            logger.info("Created collection: graph_relationships")
+
     async def upsert_knowledge(self, docs: List[Dict[str, Any]]):
         """批量写入知识点"""
         col = Collection("knowledge_base")
@@ -143,3 +163,52 @@ class LongTermMemory:
             limit=1
         )
         return res[0]["summary"] if res else ""
+
+    async def upsert_graph(self, entities: List[Dict[str, Any]], relationships: List[Dict[str, Any]]):
+        """写入图数据"""
+        # 1. 写入实体到 knowledge_base
+        kb_docs = []
+        for entity in entities:
+            content = f"实体: {entity['name']}, 类型: {entity['type']}"
+            embedding = await embed(content)
+            kb_docs.append({
+                "content": content,
+                "source": "graph_extraction",
+                "doc_type": "entity",
+                "embedding": embedding
+            })
+        await self.upsert_knowledge(kb_docs)
+
+        # 2. 写入关系到 graph_relationships
+        col = Collection("graph_relationships")
+        
+        data_source = [r["source"] for r in relationships]
+        data_target = [r["target"] for r in relationships]
+        data_relation = [r["relation"] for r in relationships]
+        
+        embeddings = []
+        for r in relationships:
+            desc = f"{r['source']} --({r['relation']})--> {r['target']}"
+            embeddings.append(await embed(desc))
+            
+        entities_to_insert = [
+            data_source,
+            data_target,
+            data_relation,
+            embeddings
+        ]
+        col.insert(entities_to_insert)
+        col.flush()
+
+    async def search_related_entities(self, entity_name: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """搜索与指定实体相关的关系"""
+        col = Collection("graph_relationships")
+        col.load()
+        # 精确匹配（假设名称一致性）或模糊匹配？
+        # 这里先尝试精确匹配 source 或 target
+        res = col.query(
+            expr=f'source == "{entity_name}" or target == "{entity_name}"',
+            output_fields=["source", "target", "relation"],
+            limit=limit
+        )
+        return res
