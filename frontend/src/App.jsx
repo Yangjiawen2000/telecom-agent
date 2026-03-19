@@ -30,6 +30,7 @@ const App = () => {
           role: m.role,
           content: m.content,
           intent: m.metadata?.intent || '',
+          causal_hit: m.metadata?.causal_hit || false,
           type: 'text'
         })));
       }
@@ -137,8 +138,10 @@ const App = () => {
                 return newMsgs;
               });
             } else if (data.type === 'done') {
-              aiMessage.intent = data.intent;
-              setMessages(prev => {
+               aiMessage.intent = data.intent;
+               aiMessage.causal_hit = data.causal_hit;
+               aiMessage.graph_hit = data.graph_hit;
+               setMessages(prev => {
                 const newMsgs = [...prev];
                 newMsgs[newMsgs.length - 1] = { ...aiMessage };
                 return newMsgs;
@@ -255,11 +258,18 @@ const App = () => {
           {messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-slideInUp`}>
               <div className={`max-w-[80%] flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                {msg.intent && (
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full mb-1 border border-blue-100 shadow-sm">
-                    {msg.intent}
-                  </span>
-                )}
+                <div className="flex gap-2 mb-1">
+                  {msg.intent && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 shadow-sm">
+                      {msg.intent}
+                    </span>
+                  )}
+                  {msg.causal_hit && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100 shadow-sm animate-pulse">
+                      Causal Reasoning
+                    </span>
+                  )}
+                </div>
                 <div className={`p-4 rounded-2xl shadow-sm border ${
                   msg.role === 'user' 
                     ? 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-tr-none border-blue-500' 

@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 import operator
-from typing import Dict, Any, List, Optional, TypedDict, Union, Annotated
+from typing import Dict, Any, List, Optional, TypedDict, Union, Annotated, AsyncGenerator
 from langgraph.graph import StateGraph, END
 from app.intent.classifier import IntentClassifier, IntentResult
 from app.agents.qa_agent import QAAgent
@@ -20,14 +20,17 @@ class OrchestratorState(TypedDict):
     user_id: str
     user_input: str
     intent_result: Optional[IntentResult]
-    task_dag: List[Dict[str, Any]] # 默认替换
+    task_dag: List[Dict[str, Any]]
     current_node: str
     context_snapshots: Dict[str, Any]
     final_response: str
-    fsm_state: str # IDLE/PLANNING/EXECUTING/SWITCHING/RESUMING/COMPLETED
+    final_metadata: Dict[str, Any]
+    fsm_state: str  # IDLE/PLANNING/EXECUTING/SWITCHING/RESUMING/COMPLETED
     expert_outputs: Annotated[List[Dict[str, Any]], operator.add]
     stm: ShortTermMemory
     registry: ToolRegistry
+    graph_context: str
+    tool_output: Optional[Dict[str, Any]]
 
 class Orchestrator:
     def __init__(self, registry: ToolRegistry):
@@ -44,19 +47,16 @@ class Orchestrator:
         self.graph = self.builder.compile()
 
     def _build_graph(self):
-        # 定义节点
         self.builder.add_node("intent_node", self.intent_node)
         self.builder.add_node("plan_node", self.plan_node)
         self.builder.add_node("dispatch_node", self.dispatch_node)
         self.builder.add_node("switch_node", self.switch_node)
         self.builder.add_node("aggregate_node", self.aggregate_node)
 
-        # 定义边
         self.builder.set_entry_point("intent_node")
         self.builder.add_edge("intent_node", "plan_node")
         self.builder.add_edge("plan_node", "dispatch_node")
         
-        # 条件边
         self.builder.add_conditional_edges(
             "dispatch_node",
             self.should_switch,
@@ -73,53 +73,49 @@ class Orchestrator:
     # --- 节点逻辑 ---
 
     async def intent_node(self, state: OrchestratorState):
-        logger.info(f"--- Intent Node ---")
-
-        # 从 STM 获取历史记录 (可选)
+        logger.info("--- Intent Node ---")
         history = await state["stm"].get_history()
-        
-        intent_res = await self.classifier.classify(
-            state["user_input"],
-            history=history
-        )
+        intent_res = await self.classifier.classify(state["user_input"], history=history)
         return {"intent_result": intent_res, "fsm_state": "PLANNING"}
 
     async def plan_node(self, state: OrchestratorState):
-        logger.info(f"--- Plan Node ---")
+        logger.info("--- Plan Node ---")
         from typing import cast
         intent_res_raw = state.get("intent_result")
         if not intent_res_raw:
             return {"task_dag": [], "fsm_state": "COMPLETED"}
 
-        # 显式转换类型以满足 linter
         intent_res = cast(IntentResult, intent_res_raw)
-        
         main_intent = str(intent_res.intent.value)
         sub_intents = [str(s.value) for s in intent_res.sub_intents]
-        
-        all_intents = [main_intent] + sub_intents
+        all_intents = list(dict.fromkeys([main_intent] + sub_intents)) # 去重
+
         task_dag: List[Dict[str, Any]] = []
-        
-        # 1. 创建所有任务节点
+        agent_assigned = set()
         tasks_map = {}
-        for i, val in enumerate(all_intents):
-            task_id = f"task_{i}_{val}"
+        
+        for val in all_intents:
+            agent_name = self._map_intent_to_agent(val)
+            # 关键改进：每个智能体在这轮对话中只处理一次任务（按意图优先级）
+            if agent_name in agent_assigned:
+                continue
+            
+            task_id = f"task_{val}"
             tasks_map[val] = task_id
             task_dag.append({
                 "id": task_id,
                 "intent": val,
-                "agent": self._map_intent_to_agent(val),
+                "agent": agent_name,
                 "params": intent_res.entities,
                 "status": "PENDING",
                 "depends_on": []
             })
+            agent_assigned.add(agent_name)
             
-        # 2. 应用规则：RECOMMEND 必须在 HANDLE_BIZ 之前
         if "handle_biz" in tasks_map and "recommend" in tasks_map:
             recommend_id = tasks_map["recommend"]
             for t in task_dag:
                 if t["intent"] == "handle_biz":
-                    # 显式确保 depends_on 是列表
                     current_deps = t.get("depends_on", [])
                     if isinstance(current_deps, list):
                         current_deps.append(recommend_id)
@@ -128,135 +124,172 @@ class Orchestrator:
         return {"task_dag": task_dag, "fsm_state": "EXECUTING", "expert_outputs": []}
 
     async def dispatch_node(self, state: OrchestratorState):
-        logger.info(f"--- Dispatch Node ---")
+        logger.info("--- Dispatch Node ---")
         dag = list(state["task_dag"])
-        
-        # 找到已完成的任务 ID 集合
         done_ids = {t["id"] for t in dag if t["status"] == "DONE"}
-        
-        # 找到所有可以执行的任务 (PENDING 且 依赖已完成)
-        to_run = []
-        for t in dag:
-            if t["status"] == "PENDING":
-                if all(dep in done_ids for dep in t.get("depends_on", [])):
-                    to_run.append(t)
+        to_run = [
+            t for t in dag
+            if t["status"] == "PENDING" and all(dep in done_ids for dep in t.get("depends_on", []))
+        ]
         
         if not to_run:
             if all(t["status"] == "DONE" for t in dag):
                 return {"fsm_state": "COMPLETED"}
-            return {"fsm_state": "EXECUTING"} # 可能在等待切换恢复
+            return {"fsm_state": "EXECUTING"}
 
         logger.info(f"Dispatching tasks: {[t['id'] for t in to_run]}")
-        new_outputs = []
         
         async def run_task(task):
             agent_name = task["agent"]
             agent = self._get_agent_instance(agent_name)
             res = await agent.run(
-                state["user_input"], 
-                state["stm"]
+                user_input=state["user_input"],
+                session_id=state["session_id"],
+                user_id=state["user_id"],
+                stm=state["stm"]
             )
-            
             if isinstance(res, dict) and res.get("need_switch"):
-                logger.info(f"Task {task['id']} interrupted")
+                logger.info(f"Task {task['id']} interrupted for switch")
             else:
                 task["status"] = "DONE"
-                
-            return {"task_id": task["id"], "output": res}
+            return {"task_id": task["id"], "agent": agent_name, "output": res} # 增加 agent 标识
 
         results = await asyncio.gather(*(run_task(t) for t in to_run))
-        new_outputs.extend(results)
-            
-        return {"expert_outputs": new_outputs, "task_dag": dag}
+        return {"expert_outputs": list(results), "task_dag": dag}
 
     def should_switch(self, state: OrchestratorState):
-        # 1. 检查是否有专家要求跳转
-        # 注意：只检查最新一轮产生的输出 (虽然使用了 operator.add，但我们可以看最后几个)
-        # 这里的专家输出包含 task_id，可以辅助判断
         for out in state["expert_outputs"]:
             if isinstance(out["output"], dict) and out["output"].get("need_switch"):
                 return "switch"
-        
-        # 2. 如果还有未完成的任务，继续 dispatch
         if any(t["status"] == "PENDING" for t in state["task_dag"]):
             return "dispatch"
-            
         return "aggregate"
 
     async def switch_node(self, state: OrchestratorState):
-        logger.info(f"--- Switch Node ---")
-        # 找到需要跳转的任务
+        logger.info("--- Switch Node ---")
         target_switch = None
         for out in state["expert_outputs"]:
             if isinstance(out["output"], dict) and out["output"].get("need_switch"):
                 target_switch = out["output"]
-                # 清除标记避免死循环
-                out["output"]["need_switch"] = None 
+                out["output"]["need_switch"] = None
                 break
         
         if not target_switch:
             return {"fsm_state": "EXECUTING"}
 
-        # 1. 保存快照 (模拟)
-        # TODO: 实际可调用 stm.add_message 保存当前 dag 状态
-        
-        # 2. 注入新任务到 DAG 头部
         new_task = {
             "id": f"switch_{len(state['task_dag'])}",
             "agent": target_switch["need_switch"],
             "params": {"reason": target_switch.get("reason")},
-            "status": "PENDING"
+            "status": "PENDING",
+            "depends_on": []
         }
-        
         updated_dag = [new_task] + state["task_dag"]
         return {"task_dag": updated_dag, "fsm_state": "SWITCHING"}
 
     async def aggregate_node(self, state: OrchestratorState):
-        logger.info(f"--- Aggregate Node ---")
+        logger.info("--- Aggregate Node ---")
         outputs = state["expert_outputs"]
         
-        # 1. 冲突检测与仲裁
-        conflict = await self.arbitrator.detect(
-            outputs, 
-            state["stm"]
-        )
+        # 1. 冲突检测与仲裁 (保持原有逻辑)
+        conflict = await self.arbitrator.detect(outputs, state["stm"])
         if conflict.has_conflict:
-            logger.warning(f"Conflict detected: {conflict.conflict_type}")
-            arb_res = await self.arbitrator.arbitrate(
-                conflict, 
-                state["user_input"], 
-                outputs
-            )
-            
+            arb_res = await self.arbitrator.arbitrate(conflict, state["user_input"], outputs)
             if arb_res.resolved:
-                logger.info(f"Conflict resolved. Winner: {arb_res.winner}")
                 winner_out = next((o for o in outputs if o["task_id"] == arb_res.winner), None)
                 if winner_out:
-                    final_msg = f"【系统提示：检测到信息冲突，已根据系统规则选择最优结论】\n"
-                    final_msg += f"仲裁原因：{arb_res.reason}\n\n"
+                    final_msg = f"【系统已自动消除专家意见冲突】仲裁原因：{arb_res.reason}\n\n"
                     final_msg += self._get_text_content(winner_out["output"])
-                    return {"final_response": final_msg, "fsm_state": "COMPLETED"}
-            
-            if arb_res.escalate:
-                return {
-                    "final_response": "抱歉，系统检测到专家建议存在严重冲突且无法自动消除，为确保准确性，已为您转接人工客服处理。",
-                    "fsm_state": "COMPLETED"
-                }
+                    winner_metadata = {k: v for k, v in winner_out["output"].items() if k not in ["answer", "message"]} if isinstance(winner_out["output"], dict) else {}
+                    return {"final_response": final_msg, "final_metadata": winner_metadata, "fsm_state": "COMPLETED"}
 
-        # 2. 正常汇总逻辑
-        final_msg = ""
-        for out in outputs:
-            data = out["output"]
-            final_msg += self._get_text_content(data) + "\n"
+        # 2. 智能优先级汇总逻辑
+        # 核心：如果 HandleAgent 在执行业务确认或完成，它的回复具有最高优先级，忽略 QAAgent 的冗余回复
+        handle_out = next((o for o in outputs if o.get("agent") == "handle_agent"), None)
+        qa_out = next((o for o in outputs if o.get("agent") == "qa_agent"), None)
         
-        return {"final_response": final_msg.strip(), "fsm_state": "COMPLETED"}
+        final_msg_parts = []
+        aggregated_meta = {}
+
+        # 逻辑：如果 HandleAgent 产出了内容且对话输入包含“确认/好的”等词，极大概率是业务办理成功
+        is_confirmation = any(w in state["user_input"] for w in ["确认", "好的", "没问题", "确认办理"])
+        
+        if handle_out and is_confirmation:
+            # 这种情况下，HandleAgent 的回复最专业且包含结构化办理结果，通常不需要 QAAgent 再通过 RAG 重复一遍“办理成功”
+            data = handle_out["output"]
+            final_msg_parts.append(self._get_text_content(data))
+            if isinstance(data, dict):
+                aggregated_meta.update({k: v for k, v in data.items() if k not in ["answer", "message"]})
+            # 也可以考虑增加一些 QAAgent 的独特信息（如果是补充性的），但如果是“办卡成功”这种完全重合的，就跳过 QA
+            # 这里简单处理：若 HandleAgent 已输出，且 QA 内容包含“成功”等关键词，则过滤 QA
+            if qa_out:
+                qa_text = self._get_text_content(qa_out["output"])
+                if "成功" not in qa_text or "办理" not in qa_text: # 如果 QA 提供了额外非重复信息，保留
+                    final_msg_parts.append(qa_text)
+                    if isinstance(qa_out["output"], dict):
+                        aggregated_meta.update({k: v for k, v in qa_out["output"].items() if k not in ["answer", "message"]})
+        else:
+            # 默认汇总模式
+            for out in outputs:
+                data = out["output"]
+                final_msg_parts.append(self._get_text_content(data))
+                if isinstance(data, dict):
+                    meta = {k: v for k, v in data.items() if k not in ["answer", "message"]}
+                    aggregated_meta.update(meta)
+        
+        return {
+            "final_response": "\n".join(dict.fromkeys(final_msg_parts)).strip(), # 基础去重
+            "final_metadata": aggregated_meta,
+            "fsm_state": "COMPLETED"
+        }
 
     def _get_text_content(self, data: Any) -> str:
         if isinstance(data, dict):
-            return data.get("message", data.get("answer", data.get("answer", "")))
+            return data.get("answer", data.get("message", data.get("bill_summary", "")))
         return str(data)
 
-    # --- 辅助方法 ---
+    async def run_stream(
+        self,
+        user_input: str,
+        session_id: str,
+        user_id: str,
+        stm: ShortTermMemory,
+        graph_context: str = "",
+        tool_output: Optional[Dict[str, Any]] = None
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        initial_state: OrchestratorState = {
+            "session_id": session_id,
+            "user_id": user_id,
+            "user_input": user_input,
+            "intent_result": None,
+            "task_dag": [],
+            "current_node": "intent_node",
+            "context_snapshots": {},
+            "final_response": "",
+            "final_metadata": {},
+            "fsm_state": "IDLE",
+            "expert_outputs": [],
+            "stm": stm,
+            "registry": self.registry,
+            "graph_context": graph_context,
+            "tool_output": tool_output
+        }
+        
+        try:
+            final_state = await self.graph.ainvoke(initial_state)
+            response = final_state.get("final_response", "抱歉，系统暂时无法处理您的请求。")
+            metadata = final_state.get("final_metadata", {})
+            
+            chunk_size = 10
+            for i in range(0, len(response), chunk_size):
+                yield {"type": "token", "content": response[i:i + chunk_size]}
+                await asyncio.sleep(0)
+            
+            yield {"type": "metadata", "content": metadata}
+                
+        except Exception as e:
+            logger.error(f"Orchestrator run_stream error: {e}", exc_info=True)
+            yield {"type": "token", "content": f"系统运行时出现错误：{str(e)}"}
 
     def _map_intent_to_agent(self, intent_name: str) -> str:
         mapping = {

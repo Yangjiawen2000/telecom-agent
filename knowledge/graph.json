@@ -37,32 +37,32 @@
       "type": "用户类型"
     },
     {
-      "name": "新开卡流程",
-      "type": "业务"
+      "name": "超出 30GB 国内流量",
+      "type": "条件"
     },
     {
       "name": "本人有效二代身份证原件",
-      "type": "材料"
+      "type": "条件"
     },
     {
       "name": "选号",
-      "type": "流程"
+      "type": "操作"
     },
     {
       "name": "选套餐",
-      "type": "流程"
+      "type": "操作"
     },
     {
       "name": "实名认证",
-      "type": "流程"
+      "type": "操作"
     },
     {
       "name": "活体检测",
-      "type": "流程"
+      "type": "操作"
     },
     {
       "name": "激活开通",
-      "type": "流程"
+      "type": "操作"
     },
     {
       "name": "预存话费",
@@ -70,11 +70,11 @@
     },
     {
       "name": "欠费停机",
-      "type": "停机原因"
+      "type": "状态"
     },
     {
-      "name": "账户余额",
-      "type": "费用"
+      "name": "账户余额不足",
+      "type": "条件"
     },
     {
       "name": "月租",
@@ -85,20 +85,24 @@
       "type": "费用"
     },
     {
+      "name": "系统自动执行停机",
+      "type": "操作"
+    },
+    {
       "name": "实名补录停机",
-      "type": "停机原因"
+      "type": "状态"
     },
     {
-      "name": "实名补录",
-      "type": "规则"
+      "name": "未完成实名补录",
+      "type": "条件"
     },
     {
-      "name": "身份审核",
-      "type": "规则"
+      "name": "身份审核未通过",
+      "type": "条件"
     },
     {
       "name": "违规异常停机",
-      "type": "停机原因"
+      "type": "状态"
     },
     {
       "name": "频繁发送骚扰短信",
@@ -114,126 +118,146 @@
     },
     {
       "name": "挂失停机",
-      "type": "停机原因"
+      "type": "状态"
     },
     {
       "name": "手机丢失",
       "type": "条件"
     },
     {
-      "name": "拆机停机",
-      "type": "停机原因"
+      "name": "用户主动申请保护性停机",
+      "type": "操作"
     },
     {
-      "name": "销户处理",
-      "type": "业务"
+      "name": "拆机停机",
+      "type": "状态"
+    },
+    {
+      "name": "用户申请销户",
+      "type": "操作"
     },
     {
       "name": "轻享卡",
       "type": "套餐"
     },
     {
-      "name": "29元/月",
-      "type": "费用"
-    },
-    {
-      "name": "30GB（后降速）",
-      "type": "流量"
-    },
-    {
-      "name": "100分钟",
-      "type": "通话"
-    },
-    {
-      "name": "流量5元/GB",
-      "type": "计费规则"
-    },
-    {
-      "name": "通话0.15元/分钟",
-      "type": "计费规则"
-    },
-    {
       "name": "畅玩卡",
       "type": "套餐"
-    },
-    {
-      "name": "59元/月",
-      "type": "费用"
-    },
-    {
-      "name": "60GB（后降速）",
-      "type": "流量"
-    },
-    {
-      "name": "300分钟",
-      "type": "通话"
-    },
-    {
-      "name": "流量3元/GB",
-      "type": "计费规则"
-    },
-    {
-      "name": "通话0.1元/分钟",
-      "type": "计费规则"
     },
     {
       "name": "尊享卡",
       "type": "套餐"
     },
     {
-      "name": "99元/月",
-      "type": "费用"
-    },
-    {
-      "name": "100GB（后降速）",
-      "type": "流量"
-    },
-    {
-      "name": "1000分钟",
-      "type": "通话"
-    },
-    {
       "name": "家庭融合套餐",
       "type": "套餐"
-    },
-    {
-      "name": "129元/月",
-      "type": "费用"
-    },
-    {
-      "name": "80GB共享",
-      "type": "流量"
-    },
-    {
-      "name": "800分钟",
-      "type": "通话"
-    },
-    {
-      "name": "可添加副卡（10元/张）",
-      "type": "业务"
     },
     {
       "name": "企业办公套餐",
       "type": "套餐"
     },
     {
-      "name": "199元/月",
+      "name": "月租29元",
       "type": "费用"
     },
     {
-      "name": "150GB+100GB定向",
-      "type": "流量"
+      "name": "月租59元",
+      "type": "费用"
     },
     {
-      "name": "2000分钟",
-      "type": "通话"
+      "name": "月租99元",
+      "type": "费用"
+    },
+    {
+      "name": "月租129元",
+      "type": "费用"
+    },
+    {
+      "name": "月租199元",
+      "type": "费用"
+    },
+    {
+      "name": "30GB国内流量（后降速）",
+      "type": "业务"
+    },
+    {
+      "name": "60GB国内流量（后降速）",
+      "type": "业务"
+    },
+    {
+      "name": "100GB国内流量（后降速）",
+      "type": "业务"
+    },
+    {
+      "name": "80GB共享国内流量",
+      "type": "业务"
+    },
+    {
+      "name": "150GB+100GB定向国内流量",
+      "type": "业务"
+    },
+    {
+      "name": "100分钟国内通话",
+      "type": "业务"
+    },
+    {
+      "name": "300分钟国内通话",
+      "type": "业务"
+    },
+    {
+      "name": "1000分钟国内通话",
+      "type": "业务"
+    },
+    {
+      "name": "800分钟国内通话",
+      "type": "业务"
+    },
+    {
+      "name": "2000分钟国内通话",
+      "type": "业务"
+    },
+    {
+      "name": "流量超出后降速至1Mbps",
+      "type": "状态"
+    },
+    {
+      "name": "次月恢复原速率",
+      "type": "状态"
+    },
+    {
+      "name": "流量5元/GB",
+      "type": "费用"
+    },
+    {
+      "name": "流量3元/GB",
+      "type": "费用"
+    },
+    {
+      "name": "通话0.15元/分钟",
+      "type": "费用"
+    },
+    {
+      "name": "通话0.1元/分钟",
+      "type": "费用"
+    },
+    {
+      "name": "可添加副卡（10元/张）",
+      "type": "业务"
     },
     {
       "name": "含云盘/办公应用权益",
       "type": "业务"
     },
     {
-      "name": "账户余额不足",
+      "name": "合约期内不得随意更改套餐",
+      "type": "规则"
+    },
+    {
+      "name": "流量超出",
+      "type": "条件"
+    },
+    {
+      "name": "次月",
       "type": "条件"
     },
     {
@@ -242,10 +266,10 @@
     },
     {
       "name": "异常使用停机",
-      "type": "停机原因"
+      "type": "状态"
     },
     {
-      "name": "异常漫游",
+      "name": "系统检测到异常漫游",
       "type": "条件"
     },
     {
@@ -254,7 +278,7 @@
     },
     {
       "name": "实名认证问题",
-      "type": "停机原因"
+      "type": "状态"
     },
     {
       "name": "未通过实名认证",
@@ -266,103 +290,87 @@
     },
     {
       "name": "挂失/报停机",
-      "type": "停机原因"
+      "type": "状态"
+    },
+    {
+      "name": "用户主动申请挂失",
+      "type": "操作"
     },
     {
       "name": "公安/管局封停",
-      "type": "停机原因"
+      "type": "状态"
     },
     {
-      "name": "涉及诈骗",
-      "type": "条件"
-    },
-    {
-      "name": "骚扰",
+      "name": "涉及诈骗、骚扰等被相关部门要求停机",
       "type": "条件"
     },
     {
       "name": "缴纳欠费",
-      "type": "处理方式"
+      "type": "操作"
     },
     {
-      "name": "客服热线",
-      "type": "业务"
+      "name": "自动复机",
+      "type": "操作"
     },
     {
-      "name": "官方App",
-      "type": "业务"
+      "name": "拨打客服热线",
+      "type": "操作"
     },
     {
-      "name": "手动申请复机",
-      "type": "处理方式"
+      "name": "通过官方App手动申请复机",
+      "type": "操作"
     },
     {
       "name": "联系客服核实身份",
-      "type": "处理方式"
+      "type": "操作"
     },
     {
       "name": "确认无风险后复机",
-      "type": "处理方式"
+      "type": "操作"
     },
     {
-      "name": "说明出行情况",
-      "type": "处理方式"
+      "name": "通过客服说明出行情况",
+      "type": "操作"
     },
     {
-      "name": "更新实名信息",
-      "type": "处理方式"
+      "name": "登录官方App更新实名信息",
+      "type": "操作"
     },
     {
-      "name": "营业厅",
-      "type": "业务"
+      "name": "前往营业厅更新实名信息",
+      "type": "操作"
     },
     {
-      "name": "申请复机",
-      "type": "处理方式"
+      "name": "通过App申请复机",
+      "type": "操作"
     },
     {
-      "name": "缴费渠道",
-      "type": "业务"
+      "name": "通过客服申请复机",
+      "type": "操作"
     },
     {
-      "name": "微信公众号",
-      "type": "业务"
+      "name": "欠费",
+      "type": "状态"
     },
     {
-      "name": "合作第三方平台",
-      "type": "业务"
+      "name": "停机",
+      "type": "状态"
     },
     {
-      "name": "支付宝",
-      "type": "业务"
-    },
-    {
-      "name": "微信",
-      "type": "业务"
-    },
-    {
-      "name": "通话",
-      "type": "业务"
-    },
-    {
-      "name": "短信",
-      "type": "业务"
-    },
-    {
-      "name": "流量",
-      "type": "业务"
+      "name": "无法使用通话、短信、流量",
+      "type": "状态"
     },
     {
       "name": "长期欠费",
-      "type": "条件"
+      "type": "状态"
     },
     {
       "name": "销号",
-      "type": "业务"
+      "type": "操作"
     },
     {
-      "name": "个人信用",
-      "type": "规则"
+      "name": "影响个人信用",
+      "type": "状态"
     },
     {
       "name": "滞纳金",
@@ -373,19 +381,35 @@
       "type": "用户类型"
     },
     {
-      "name": "协议",
+      "name": "逾期",
+      "type": "状态"
+    },
+    {
+      "name": "协议约定",
       "type": "规则"
     },
     {
-      "name": "拆机销号",
-      "type": "业务"
+      "name": "结清所有欠费",
+      "type": "条件"
+    },
+    {
+      "name": "办理销号",
+      "type": "操作"
     },
     {
       "name": "涉诈号码",
-      "type": "用户类型"
+      "type": "状态"
     },
     {
-      "name": "涉诈申诉通道",
+      "name": "关停",
+      "type": "状态"
+    },
+    {
+      "name": "线上申诉",
+      "type": "操作"
+    },
+    {
+      "name": "官方App“涉诈申诉”通道",
       "type": "业务"
     },
     {
@@ -401,6 +425,10 @@
       "type": "条件"
     },
     {
+      "name": "线下办理",
+      "type": "操作"
+    },
+    {
       "name": "本人有效身份证件",
       "type": "条件"
     },
@@ -410,19 +438,31 @@
     },
     {
       "name": "近三个月缴费记录",
-      "type": "费用"
+      "type": "条件"
     },
     {
       "name": "归属地营业厅",
       "type": "业务"
     },
     {
-      "name": "网络安全承诺书",
+      "name": "《网络安全承诺书》",
       "type": "规则"
     },
     {
       "name": "审核周期",
       "type": "规则"
+    },
+    {
+      "name": "3-5个工作日",
+      "type": "条件"
+    },
+    {
+      "name": "恢复使用",
+      "type": "状态"
+    },
+    {
+      "name": "误判",
+      "type": "状态"
     },
     {
       "name": "工作证明",
@@ -433,12 +473,16 @@
       "type": "条件"
     },
     {
-      "name": "同一证件下多个号码",
-      "type": "用户类型"
+      "name": "同一证件下多个号码涉诈",
+      "type": "条件"
+    },
+    {
+      "name": "永久封停",
+      "type": "状态"
     },
     {
       "name": "黑名单",
-      "type": "规则"
+      "type": "状态"
     },
     {
       "name": "诈骗高风险地区新入网号码",
@@ -446,14 +490,10 @@
     },
     {
       "name": "二次实人认证",
-      "type": "规则"
+      "type": "操作"
     },
     {
       "name": "个人用户",
-      "type": "用户类型"
-    },
-    {
-      "name": "企业用户",
       "type": "用户类型"
     },
     {
@@ -473,12 +513,16 @@
       "type": "条件"
     },
     {
-      "name": "18周岁以上",
-      "type": "条件"
+      "name": "部分套餐要求18周岁以上",
+      "type": "规则"
+    },
+    {
+      "name": "未满16周岁",
+      "type": "状态"
     },
     {
       "name": "监护人陪同",
-      "type": "条件"
+      "type": "操作"
     },
     {
       "name": "监护人身份证",
@@ -493,6 +537,22 @@
       "type": "规则"
     },
     {
+      "name": "同一身份证下全国范围内最多办理5个移动号码",
+      "type": "规则"
+    },
+    {
+      "name": "已销户号码",
+      "type": "状态"
+    },
+    {
+      "name": "管局规定",
+      "type": "规则"
+    },
+    {
+      "name": "企业用户",
+      "type": "用户类型"
+    },
+    {
       "name": "营业执照副本原件（盖公章）",
       "type": "条件"
     },
@@ -505,6 +565,10 @@
       "type": "条件"
     },
     {
+      "name": "部分集团套餐",
+      "type": "套餐"
+    },
+    {
       "name": "法人身份证复印件",
       "type": "条件"
     },
@@ -513,108 +577,120 @@
       "type": "条件"
     },
     {
-      "name": "部分套餐",
-      "type": "套餐"
+      "name": "资格查询",
+      "type": "操作"
     },
     {
-      "name": "部分集团套餐",
-      "type": "套餐"
+      "name": "短信“CXXZ#姓名#身份证号”",
+      "type": "操作"
     },
     {
-      "name": "携号转网",
+      "name": "原运营商客服",
       "type": "业务"
     },
     {
-      "name": "资格查询",
-      "type": "规则"
+      "name": "转网条件",
+      "type": "条件"
     },
     {
       "name": "获取授权码",
+      "type": "操作"
+    },
+    {
+      "name": "短信“SQXZ#姓名#身份证号”",
+      "type": "操作"
+    },
+    {
+      "name": "携转授权码",
+      "type": "业务"
+    },
+    {
+      "name": "授权码有效期1小时",
       "type": "规则"
     },
     {
       "name": "办理入网",
-      "type": "规则"
+      "type": "操作"
     },
     {
-      "name": "生效时间",
-      "type": "规则"
-    },
-    {
-      "name": "结清欠费",
+      "name": "本人身份证原件",
       "type": "条件"
     },
     {
-      "name": "解约合约套餐",
+      "name": "原手机卡",
       "type": "条件"
     },
     {
-      "name": "违约金",
-      "type": "费用"
-    },
-    {
-      "name": "携转授权码",
-      "type": "规则"
+      "name": "本网营业厅",
+      "type": "业务"
     },
     {
       "name": "携入套餐",
       "type": "套餐"
     },
     {
-      "name": "安装条件",
-      "type": "条件"
+      "name": "生效时间",
+      "type": "规则"
+    },
+    {
+      "name": "原卡短暂无法使用",
+      "type": "状态"
+    },
+    {
+      "name": "结清本网所有欠费",
+      "type": "操作"
+    },
+    {
+      "name": "解约合约套餐",
+      "type": "操作"
+    },
+    {
+      "name": "违约金",
+      "type": "费用"
+    },
+    {
+      "name": "目标运营商",
+      "type": "业务"
+    },
+    {
+      "name": "转入本网",
+      "type": "业务"
+    },
+    {
+      "name": "转出本网",
+      "type": "业务"
     },
     {
       "name": "小区或地址覆盖本网光纤资源",
       "type": "条件"
     },
     {
-      "name": "身份证原件",
+      "name": "个人用户持身份证原件",
       "type": "条件"
     },
     {
-      "name": "营业执照",
+      "name": "企业用户提供营业执照及经办人身份证",
       "type": "条件"
     },
     {
-      "name": "经办人身份证",
-      "type": "条件"
+      "name": "预约宽带新装",
+      "type": "操作"
     },
     {
-      "name": "安装流程",
-      "type": "业务"
+      "name": "勘测线路资源",
+      "type": "操作"
     },
     {
-      "name": "预约",
-      "type": "业务"
+      "name": "施工安装",
+      "type": "操作"
     },
     {
-      "name": "勘测",
-      "type": "业务"
-    },
-    {
-      "name": "施工",
-      "type": "业务"
-    },
-    {
-      "name": "验收",
-      "type": "业务"
-    },
-    {
-      "name": "光猫",
-      "type": "设备"
-    },
-    {
-      "name": "路由器",
-      "type": "设备"
+      "name": "验收网络",
+      "type": "操作"
     },
     {
       "name": "安装调试费",
       "type": "费用"
-    },
-    {
-      "name": "融合套餐",
-      "type": "套餐"
     },
     {
       "name": "设备押金",
@@ -625,16 +701,16 @@
       "type": "费用"
     },
     {
-      "name": "宽带",
-      "type": "业务"
-    },
-    {
-      "name": "手机套餐",
+      "name": "融合套餐",
       "type": "套餐"
     },
     {
+      "name": "光猫免费租用",
+      "type": "规则"
+    },
+    {
       "name": "移机",
-      "type": "业务"
+      "type": "操作"
     },
     {
       "name": "移机费",
@@ -642,6 +718,22 @@
     },
     {
       "name": "拆机",
+      "type": "操作"
+    },
+    {
+      "name": "归还租用设备",
+      "type": "操作"
+    },
+    {
+      "name": "结清费用",
+      "type": "状态"
+    },
+    {
+      "name": "光猫",
+      "type": "设备"
+    },
+    {
+      "name": "宽带新装流程",
       "type": "业务"
     }
   ],
@@ -655,11 +747,6 @@
       "source": "畅越 129 套餐",
       "target": "30GB 国内流量",
       "relation": "包含"
-    },
-    {
-      "source": "30GB 国内流量",
-      "target": "5 元/GB",
-      "relation": "计费"
     },
     {
       "source": "畅越 129 套餐",
@@ -687,103 +774,188 @@
       "relation": "适用于"
     },
     {
-      "source": "新开卡流程",
-      "target": "本人有效二代身份证原件",
-      "relation": "要求"
+      "source": "超出 30GB 国内流量",
+      "target": "5 元/GB",
+      "relation": "触发"
     },
     {
-      "source": "新开卡流程",
-      "target": "选号",
-      "relation": "包含"
+      "source": "超出 30GB 国内流量",
+      "target": "5 元/GB",
+      "relation": "导致"
     },
     {
-      "source": "新开卡流程",
-      "target": "选套餐",
-      "relation": "包含"
-    },
-    {
-      "source": "新开卡流程",
+      "source": "本人有效二代身份证原件",
       "target": "实名认证",
-      "relation": "包含"
+      "relation": "前提"
     },
     {
-      "source": "新开卡流程",
+      "source": "实名认证",
       "target": "活体检测",
-      "relation": "包含"
+      "relation": "前提"
     },
     {
-      "source": "新开卡流程",
+      "source": "活体检测",
       "target": "激活开通",
-      "relation": "包含"
+      "relation": "前提"
     },
     {
-      "source": "新开卡流程",
+      "source": "选套餐",
       "target": "预存话费",
-      "relation": "要求"
+      "relation": "导致"
     },
     {
-      "source": "欠费停机",
-      "target": "账户余额",
-      "relation": "要求"
+      "source": "缴纳预存话费",
+      "target": "激活开通",
+      "relation": "前提"
     },
     {
-      "source": "欠费停机",
-      "target": "月租",
-      "relation": "要求"
+      "source": "账户余额不足",
+      "target": "欠费停机",
+      "relation": "导致"
     },
     {
-      "source": "欠费停机",
-      "target": "超套费用",
-      "relation": "要求"
+      "source": "月租",
+      "target": "账户余额不足",
+      "relation": "导致"
     },
     {
-      "source": "实名补录停机",
-      "target": "实名补录",
-      "relation": "要求"
+      "source": "超套费用",
+      "target": "账户余额不足",
+      "relation": "导致"
     },
     {
-      "source": "实名补录停机",
-      "target": "身份审核",
-      "relation": "要求"
+      "source": "账户余额不足",
+      "target": "系统自动执行停机",
+      "relation": "触发"
     },
     {
-      "source": "违规异常停机",
-      "target": "频繁发送骚扰短信",
-      "relation": "包含"
+      "source": "系统自动执行停机",
+      "target": "欠费停机",
+      "relation": "导致"
     },
     {
-      "source": "违规异常停机",
-      "target": "涉诈行为",
-      "relation": "包含"
+      "source": "未完成实名补录",
+      "target": "实名补录停机",
+      "relation": "导致"
     },
     {
-      "source": "违规异常停机",
-      "target": "号卡在多台设备间频繁切换",
-      "relation": "包含"
+      "source": "身份审核未通过",
+      "target": "实名补录停机",
+      "relation": "导致"
     },
     {
-      "source": "挂失停机",
-      "target": "手机丢失",
-      "relation": "适用于"
+      "source": "频繁发送骚扰短信",
+      "target": "违规异常停机",
+      "relation": "导致"
     },
     {
-      "source": "拆机停机",
-      "target": "销户处理",
-      "relation": "属于"
+      "source": "涉诈行为",
+      "target": "违规异常停机",
+      "relation": "导致"
+    },
+    {
+      "source": "号卡在多台设备间频繁切换",
+      "target": "违规异常停机",
+      "relation": "导致"
+    },
+    {
+      "source": "手机丢失",
+      "target": "用户主动申请保护性停机",
+      "relation": "触发"
+    },
+    {
+      "source": "用户主动申请保护性停机",
+      "target": "挂失停机",
+      "relation": "导致"
+    },
+    {
+      "source": "用户申请销户",
+      "target": "拆机停机",
+      "relation": "导致"
     },
     {
       "source": "轻享卡",
-      "target": "29元/月",
+      "target": "月租29元",
       "relation": "包含"
     },
     {
       "source": "轻享卡",
-      "target": "30GB（后降速）",
+      "target": "30GB国内流量（后降速）",
       "relation": "包含"
     },
     {
       "source": "轻享卡",
-      "target": "100分钟",
+      "target": "100分钟国内通话",
+      "relation": "包含"
+    },
+    {
+      "source": "畅玩卡",
+      "target": "月租59元",
+      "relation": "包含"
+    },
+    {
+      "source": "畅玩卡",
+      "target": "60GB国内流量（后降速）",
+      "relation": "包含"
+    },
+    {
+      "source": "畅玩卡",
+      "target": "300分钟国内通话",
+      "relation": "包含"
+    },
+    {
+      "source": "尊享卡",
+      "target": "月租99元",
+      "relation": "包含"
+    },
+    {
+      "source": "尊享卡",
+      "target": "100GB国内流量（后降速）",
+      "relation": "包含"
+    },
+    {
+      "source": "尊享卡",
+      "target": "1000分钟国内通话",
+      "relation": "包含"
+    },
+    {
+      "source": "家庭融合套餐",
+      "target": "月租129元",
+      "relation": "包含"
+    },
+    {
+      "source": "家庭融合套餐",
+      "target": "80GB共享国内流量",
+      "relation": "包含"
+    },
+    {
+      "source": "家庭融合套餐",
+      "target": "800分钟国内通话",
+      "relation": "包含"
+    },
+    {
+      "source": "家庭融合套餐",
+      "target": "可添加副卡（10元/张）",
+      "relation": "包含"
+    },
+    {
+      "source": "企业办公套餐",
+      "target": "月租199元",
+      "relation": "包含"
+    },
+    {
+      "source": "企业办公套餐",
+      "target": "150GB+100GB定向国内流量",
+      "relation": "包含"
+    },
+    {
+      "source": "企业办公套餐",
+      "target": "2000分钟国内通话",
+      "relation": "包含"
+    },
+    {
+      "source": "企业办公套餐",
+      "target": "含云盘/办公应用权益",
       "relation": "包含"
     },
     {
@@ -798,21 +970,6 @@
     },
     {
       "source": "畅玩卡",
-      "target": "59元/月",
-      "relation": "包含"
-    },
-    {
-      "source": "畅玩卡",
-      "target": "60GB（后降速）",
-      "relation": "包含"
-    },
-    {
-      "source": "畅玩卡",
-      "target": "300分钟",
-      "relation": "包含"
-    },
-    {
-      "source": "畅玩卡",
       "target": "流量3元/GB",
       "relation": "计费"
     },
@@ -820,21 +977,6 @@
       "source": "畅玩卡",
       "target": "通话0.1元/分钟",
       "relation": "计费"
-    },
-    {
-      "source": "尊享卡",
-      "target": "99元/月",
-      "relation": "包含"
-    },
-    {
-      "source": "尊享卡",
-      "target": "100GB（后降速）",
-      "relation": "包含"
-    },
-    {
-      "source": "尊享卡",
-      "target": "1000分钟",
-      "relation": "包含"
     },
     {
       "source": "尊享卡",
@@ -848,21 +990,6 @@
     },
     {
       "source": "家庭融合套餐",
-      "target": "129元/月",
-      "relation": "包含"
-    },
-    {
-      "source": "家庭融合套餐",
-      "target": "80GB共享",
-      "relation": "包含"
-    },
-    {
-      "source": "家庭融合套餐",
-      "target": "800分钟",
-      "relation": "包含"
-    },
-    {
-      "source": "家庭融合套餐",
       "target": "流量3元/GB",
       "relation": "计费"
     },
@@ -870,26 +997,6 @@
       "source": "家庭融合套餐",
       "target": "通话0.1元/分钟",
       "relation": "计费"
-    },
-    {
-      "source": "家庭融合套餐",
-      "target": "可添加副卡（10元/张）",
-      "relation": "包含"
-    },
-    {
-      "source": "企业办公套餐",
-      "target": "199元/月",
-      "relation": "包含"
-    },
-    {
-      "source": "企业办公套餐",
-      "target": "150GB+100GB定向",
-      "relation": "包含"
-    },
-    {
-      "source": "企业办公套餐",
-      "target": "2000分钟",
-      "relation": "包含"
     },
     {
       "source": "企业办公套餐",
@@ -902,159 +1009,149 @@
       "relation": "计费"
     },
     {
-      "source": "企业办公套餐",
-      "target": "含云盘/办公应用权益",
-      "relation": "包含"
+      "source": "流量超出",
+      "target": "流量超出后降速至1Mbps",
+      "relation": "导致"
     },
     {
-      "source": "欠费停机",
-      "target": "账户余额不足",
-      "relation": "要求"
+      "source": "次月",
+      "target": "次月恢复原速率",
+      "relation": "触发"
     },
     {
-      "source": "欠费停机",
-      "target": "超出信用额度",
-      "relation": "要求"
+      "source": "流量超出后降速至1Mbps",
+      "target": "次月恢复原速率",
+      "relation": "前提"
     },
     {
-      "source": "异常使用停机",
-      "target": "异常漫游",
-      "relation": "要求"
-    },
-    {
-      "source": "异常使用停机",
-      "target": "高频呼叫/短信",
-      "relation": "要求"
-    },
-    {
-      "source": "实名认证问题",
-      "target": "未通过实名认证",
-      "relation": "要求"
-    },
-    {
-      "source": "实名认证问题",
-      "target": "认证信息过期",
-      "relation": "要求"
-    },
-    {
-      "source": "公安/管局封停",
-      "target": "涉及诈骗",
-      "relation": "要求"
-    },
-    {
-      "source": "公安/管局封停",
-      "target": "骚扰",
-      "relation": "要求"
-    },
-    {
-      "source": "欠费停机",
-      "target": "缴纳欠费",
+      "source": "合约期内不得随意更改套餐",
+      "target": "轻享卡",
       "relation": "适用于"
+    },
+    {
+      "source": "合约期内不得随意更改套餐",
+      "target": "畅玩卡",
+      "relation": "适用于"
+    },
+    {
+      "source": "合约期内不得随意更改套餐",
+      "target": "尊享卡",
+      "relation": "适用于"
+    },
+    {
+      "source": "合约期内不得随意更改套餐",
+      "target": "家庭融合套餐",
+      "relation": "适用于"
+    },
+    {
+      "source": "合约期内不得随意更改套餐",
+      "target": "企业办公套餐",
+      "relation": "适用于"
+    },
+    {
+      "source": "账户余额不足",
+      "target": "欠费停机",
+      "relation": "导致"
+    },
+    {
+      "source": "超出信用额度",
+      "target": "欠费停机",
+      "relation": "导致"
+    },
+    {
+      "source": "系统检测到异常漫游",
+      "target": "异常使用停机",
+      "relation": "导致"
+    },
+    {
+      "source": "高频呼叫/短信",
+      "target": "异常使用停机",
+      "relation": "导致"
+    },
+    {
+      "source": "未通过实名认证",
+      "target": "实名认证问题",
+      "relation": "导致"
+    },
+    {
+      "source": "认证信息过期",
+      "target": "实名认证问题",
+      "relation": "导致"
+    },
+    {
+      "source": "用户主动申请挂失",
+      "target": "挂失/报停机",
+      "relation": "导致"
+    },
+    {
+      "source": "涉及诈骗、骚扰等被相关部门要求停机",
+      "target": "公安/管局封停",
+      "relation": "导致"
     },
     {
       "source": "缴纳欠费",
-      "target": "客服热线",
-      "relation": "属于"
+      "target": "自动复机",
+      "relation": "触发"
     },
     {
-      "source": "缴纳欠费",
-      "target": "官方App",
-      "relation": "属于"
+      "source": "自动复机",
+      "target": "欠费停机",
+      "relation": "前提"
     },
     {
-      "source": "欠费停机",
-      "target": "手动申请复机",
-      "relation": "适用于"
+      "source": "拨打客服热线",
+      "target": "复机",
+      "relation": "触发"
     },
     {
-      "source": "异常使用停机",
-      "target": "联系客服核实身份",
-      "relation": "适用于"
+      "source": "通过官方App手动申请复机",
+      "target": "复机",
+      "relation": "触发"
     },
     {
       "source": "联系客服核实身份",
       "target": "确认无风险后复机",
-      "relation": "包含"
+      "relation": "前提"
     },
     {
-      "source": "异常使用停机",
-      "target": "说明出行情况",
-      "relation": "适用于"
+      "source": "确认无风险后复机",
+      "target": "异常使用停机",
+      "relation": "前提"
     },
     {
-      "source": "实名认证问题",
-      "target": "更新实名信息",
-      "relation": "适用于"
+      "source": "通过客服说明出行情况",
+      "target": "复机",
+      "relation": "触发"
     },
     {
-      "source": "更新实名信息",
-      "target": "官方App",
-      "relation": "属于"
+      "source": "登录官方App更新实名信息",
+      "target": "解决实名认证问题",
+      "relation": "触发"
     },
     {
-      "source": "更新实名信息",
-      "target": "营业厅",
-      "relation": "属于"
+      "source": "前往营业厅更新实名信息",
+      "target": "解决实名认证问题",
+      "relation": "触发"
     },
     {
-      "source": "挂失/报停机",
-      "target": "申请复机",
-      "relation": "适用于"
+      "source": "通过App申请复机",
+      "target": "挂失/报停机",
+      "relation": "触发"
     },
     {
-      "source": "申请复机",
-      "target": "官方App",
-      "relation": "属于"
+      "source": "通过客服申请复机",
+      "target": "挂失/报停机",
+      "relation": "触发"
     },
     {
-      "source": "申请复机",
-      "target": "客服热线",
-      "relation": "属于"
+      "source": "欠费",
+      "target": "停机",
+      "relation": "导致"
     },
     {
-      "source": "缴费渠道",
-      "target": "官方App",
-      "relation": "包含"
-    },
-    {
-      "source": "缴费渠道",
-      "target": "微信公众号",
-      "relation": "包含"
-    },
-    {
-      "source": "缴费渠道",
-      "target": "营业厅",
-      "relation": "包含"
-    },
-    {
-      "source": "缴费渠道",
-      "target": "合作第三方平台",
-      "relation": "包含"
-    },
-    {
-      "source": "合作第三方平台",
-      "target": "支付宝",
-      "relation": "包含"
-    },
-    {
-      "source": "合作第三方平台",
-      "target": "微信",
-      "relation": "包含"
-    },
-    {
-      "source": "欠费停机",
-      "target": "通话",
-      "relation": "影响"
-    },
-    {
-      "source": "欠费停机",
-      "target": "短信",
-      "relation": "影响"
-    },
-    {
-      "source": "欠费停机",
-      "target": "流量",
-      "relation": "影响"
+      "source": "停机",
+      "target": "无法使用通话、短信、流量",
+      "relation": "导致"
     },
     {
       "source": "长期欠费",
@@ -1063,98 +1160,113 @@
     },
     {
       "source": "长期欠费",
-      "target": "个人信用",
-      "relation": "影响"
+      "target": "影响个人信用",
+      "relation": "导致"
     },
     {
-      "source": "滞纳金",
-      "target": "后付费用户",
+      "source": "逾期",
+      "target": "滞纳金",
+      "relation": "触发"
+    },
+    {
+      "source": "后付费用户",
+      "target": "滞纳金",
       "relation": "适用于"
     },
     {
-      "source": "滞纳金",
-      "target": "协议",
-      "relation": "按"
+      "source": "协议约定",
+      "target": "滞纳金",
+      "relation": "要求"
     },
     {
-      "source": "拆机销号",
-      "target": "欠费",
-      "relation": "要求"
+      "source": "结清所有欠费",
+      "target": "办理销号",
+      "relation": "前提"
     },
     {
       "source": "涉诈号码",
-      "target": "官方App",
-      "relation": "适用于"
+      "target": "关停",
+      "relation": "导致"
     },
     {
-      "source": "官方App",
-      "target": "涉诈申诉通道",
-      "relation": "包含"
+      "source": "线上申诉",
+      "target": "官方App“涉诈申诉”通道",
+      "relation": "属于"
     },
     {
-      "source": "涉诈申诉通道",
-      "target": "身份证照片",
-      "relation": "要求"
+      "source": "身份证照片",
+      "target": "线上申诉",
+      "relation": "前提"
     },
     {
-      "source": "涉诈申诉通道",
-      "target": "承诺书",
-      "relation": "要求"
+      "source": "承诺书",
+      "target": "线上申诉",
+      "relation": "前提"
     },
     {
-      "source": "涉诈申诉通道",
-      "target": "近期通话记录",
-      "relation": "要求"
+      "source": "近期通话记录",
+      "target": "线上申诉",
+      "relation": "前提"
     },
     {
-      "source": "涉诈号码",
+      "source": "线下办理",
       "target": "归属地营业厅",
-      "relation": "适用于"
+      "relation": "属于"
     },
     {
-      "source": "归属地营业厅",
-      "target": "本人有效身份证件",
-      "relation": "要求"
+      "source": "本人有效身份证件",
+      "target": "线下办理",
+      "relation": "前提"
     },
     {
-      "source": "归属地营业厅",
-      "target": "手机卡",
-      "relation": "要求"
+      "source": "手机卡",
+      "target": "线下办理",
+      "relation": "前提"
     },
     {
-      "source": "归属地营业厅",
-      "target": "近三个月缴费记录",
-      "relation": "要求"
+      "source": "近三个月缴费记录",
+      "target": "线下办理",
+      "relation": "前提"
     },
     {
-      "source": "归属地营业厅",
-      "target": "网络安全承诺书",
+      "source": "线下办理",
+      "target": "《网络安全承诺书》",
       "relation": "要求"
     },
     {
       "source": "审核周期",
-      "target": "涉诈号码",
-      "relation": "适用于"
+      "target": "3-5个工作日",
+      "relation": "包含"
     },
     {
-      "source": "涉诈号码",
+      "source": "审核通过",
+      "target": "恢复使用",
+      "relation": "导致"
+    },
+    {
+      "source": "误判",
       "target": "工作证明",
-      "relation": "要求"
+      "relation": "触发"
     },
     {
-      "source": "涉诈号码",
+      "source": "误判",
       "target": "行程记录",
-      "relation": "要求"
+      "relation": "触发"
     },
     {
-      "source": "同一证件下多个号码",
+      "source": "同一证件下多个号码涉诈",
+      "target": "永久封停",
+      "relation": "导致"
+    },
+    {
+      "source": "同一证件下多个号码涉诈",
       "target": "黑名单",
-      "relation": "属于"
+      "relation": "导致"
     },
     {
       "source": "诈骗高风险地区新入网号码",
       "target": "二次实人认证",
-      "relation": "要求"
+      "relation": "触发"
     },
     {
       "source": "个人用户",
@@ -1162,44 +1274,49 @@
       "relation": "要求"
     },
     {
-      "source": "个人用户",
-      "target": "临时身份证",
-      "relation": "要求"
-    },
-    {
       "source": "临时身份证",
       "target": "户口本等辅助证件",
-      "relation": "要求"
+      "relation": "前提"
     },
     {
-      "source": "个人用户",
-      "target": "年满16周岁",
-      "relation": "要求"
+      "source": "年满16周岁",
+      "target": "个人用户",
+      "relation": "前提"
     },
     {
-      "source": "部分套餐",
-      "target": "18周岁以上",
-      "relation": "要求"
+      "source": "部分套餐要求18周岁以上",
+      "target": "个人用户",
+      "relation": "适用于"
     },
     {
-      "source": "个人用户",
+      "source": "未满16周岁",
       "target": "监护人陪同",
-      "relation": "要求"
+      "relation": "触发"
     },
     {
-      "source": "监护人陪同",
+      "source": "未满16周岁",
       "target": "监护人身份证",
       "relation": "要求"
     },
     {
-      "source": "监护人陪同",
+      "source": "未满16周岁",
       "target": "关系证明",
       "relation": "要求"
     },
     {
-      "source": "个人用户",
+      "source": "一证五号限制",
+      "target": "同一身份证下全国范围内最多办理5个移动号码",
+      "relation": "包含"
+    },
+    {
+      "source": "同一身份证下全国范围内最多办理5个移动号码",
+      "target": "已销户号码",
+      "relation": "包含"
+    },
+    {
+      "source": "管局规定",
       "target": "一证五号限制",
-      "relation": "属于"
+      "relation": "前提"
     },
     {
       "source": "企业用户",
@@ -1227,44 +1344,54 @@
       "relation": "要求"
     },
     {
-      "source": "携号转网",
+      "source": "部分集团套餐",
+      "target": "企业用户",
+      "relation": "适用于"
+    },
+    {
+      "source": "短信“CXXZ#姓名#身份证号”",
       "target": "资格查询",
-      "relation": "包含"
+      "relation": "属于"
     },
     {
-      "source": "携号转网",
+      "source": "资格查询",
+      "target": "转网条件",
+      "relation": "触发"
+    },
+    {
+      "source": "转网条件",
       "target": "获取授权码",
-      "relation": "包含"
+      "relation": "前提"
     },
     {
-      "source": "携号转网",
-      "target": "办理入网",
-      "relation": "包含"
-    },
-    {
-      "source": "携号转网",
-      "target": "生效时间",
-      "relation": "包含"
-    },
-    {
-      "source": "转出本网",
-      "target": "结清欠费",
-      "relation": "要求"
-    },
-    {
-      "source": "转出本网",
-      "target": "解约合约套餐",
-      "relation": "要求"
-    },
-    {
-      "source": "解约合约套餐",
-      "target": "违约金",
-      "relation": "计费"
+      "source": "短信“SQXZ#姓名#身份证号”",
+      "target": "获取授权码",
+      "relation": "属于"
     },
     {
       "source": "获取授权码",
       "target": "携转授权码",
-      "relation": "生成"
+      "relation": "导致"
+    },
+    {
+      "source": "携转授权码",
+      "target": "授权码有效期1小时",
+      "relation": "包含"
+    },
+    {
+      "source": "办理入网",
+      "target": "本人身份证原件",
+      "relation": "要求"
+    },
+    {
+      "source": "办理入网",
+      "target": "原手机卡",
+      "relation": "要求"
+    },
+    {
+      "source": "办理入网",
+      "target": "本网营业厅",
+      "relation": "适用于"
     },
     {
       "source": "办理入网",
@@ -1272,104 +1399,169 @@
       "relation": "包含"
     },
     {
-      "source": "安装条件",
-      "target": "小区或地址覆盖本网光纤资源",
-      "relation": "包含"
+      "source": "办理入网",
+      "target": "携转授权码",
+      "relation": "要求"
     },
     {
-      "source": "安装条件",
-      "target": "个人用户",
+      "source": "生效时间",
+      "target": "原卡短暂无法使用",
+      "relation": "导致"
+    },
+    {
+      "source": "结清本网所有欠费",
+      "target": "转出本网",
+      "relation": "前提"
+    },
+    {
+      "source": "解约合约套餐",
+      "target": "转出本网",
+      "relation": "前提"
+    },
+    {
+      "source": "解约合约套餐",
+      "target": "违约金",
+      "relation": "导致"
+    },
+    {
+      "source": "转出本网",
+      "target": "目标运营商",
       "relation": "适用于"
     },
     {
-      "source": "安装条件",
-      "target": "企业用户",
-      "relation": "适用于"
-    },
-    {
-      "source": "个人用户",
-      "target": "身份证原件",
-      "relation": "要求"
-    },
-    {
-      "source": "企业用户",
-      "target": "营业执照",
-      "relation": "要求"
-    },
-    {
-      "source": "企业用户",
-      "target": "经办人身份证",
-      "relation": "要求"
-    },
-    {
-      "source": "安装流程",
-      "target": "预约",
+      "source": "转入本网",
+      "target": "资格查询",
       "relation": "包含"
     },
     {
-      "source": "安装流程",
-      "target": "勘测",
+      "source": "转入本网",
+      "target": "获取授权码",
       "relation": "包含"
     },
     {
-      "source": "安装流程",
-      "target": "施工",
+      "source": "转入本网",
+      "target": "办理入网",
       "relation": "包含"
     },
     {
-      "source": "安装流程",
-      "target": "验收",
+      "source": "转出本网",
+      "target": "结清本网所有欠费",
       "relation": "包含"
     },
     {
-      "source": "施工",
-      "target": "光猫",
-      "relation": "安装"
+      "source": "转出本网",
+      "target": "解约合约套餐",
+      "relation": "包含"
     },
     {
-      "source": "施工",
-      "target": "路由器",
-      "relation": "安装"
+      "source": "小区或地址覆盖本网光纤资源",
+      "target": "预约宽带新装",
+      "relation": "前提"
     },
     {
-      "source": "验收",
-      "target": "设备押金",
-      "relation": "收取"
+      "source": "个人用户持身份证原件",
+      "target": "预约宽带新装",
+      "relation": "前提"
     },
     {
-      "source": "验收",
-      "target": "光猫",
-      "relation": "租用"
+      "source": "企业用户提供营业执照及经办人身份证",
+      "target": "预约宽带新装",
+      "relation": "前提"
+    },
+    {
+      "source": "预约宽带新装",
+      "target": "勘测线路资源",
+      "relation": "触发"
+    },
+    {
+      "source": "勘测线路资源",
+      "target": "施工安装",
+      "relation": "触发"
+    },
+    {
+      "source": "施工安装",
+      "target": "验收网络",
+      "relation": "触发"
+    },
+    {
+      "source": "验收网络",
+      "target": "收取设备押金或购买费用",
+      "relation": "导致"
     },
     {
       "source": "融合套餐",
       "target": "安装调试费",
-      "relation": "免收"
+      "relation": "导致"
     },
     {
-      "source": "设备押金",
-      "target": "光猫",
-      "relation": "对应"
+      "source": "融合套餐",
+      "target": "免安装费",
+      "relation": "导致"
     },
     {
-      "source": "宽带",
-      "target": "套餐费用",
-      "relation": "计费"
+      "source": "光猫免费租用",
+      "target": "设备押金",
+      "relation": "前提"
     },
     {
-      "source": "宽带",
-      "target": "手机套餐",
-      "relation": "融合"
+      "source": "退网",
+      "target": "退还押金",
+      "relation": "触发"
+    },
+    {
+      "source": "归还租用设备",
+      "target": "退还押金",
+      "relation": "前提"
     },
     {
       "source": "移机",
       "target": "移机费",
-      "relation": "收取"
+      "relation": "导致"
     },
     {
       "source": "拆机",
-      "target": "租用设备",
-      "relation": "归还"
+      "target": "归还租用设备",
+      "relation": "要求"
+    },
+    {
+      "source": "拆机",
+      "target": "结清费用",
+      "relation": "前提"
+    },
+    {
+      "source": "个人用户",
+      "target": "个人用户持身份证原件",
+      "relation": "要求"
+    },
+    {
+      "source": "企业用户",
+      "target": "企业用户提供营业执照及经办人身份证",
+      "relation": "要求"
+    },
+    {
+      "source": "融合套餐",
+      "target": "套餐费用",
+      "relation": "包含"
+    },
+    {
+      "source": "宽带新装流程",
+      "target": "预约宽带新装",
+      "relation": "包含"
+    },
+    {
+      "source": "宽带新装流程",
+      "target": "勘测线路资源",
+      "relation": "包含"
+    },
+    {
+      "source": "宽带新装流程",
+      "target": "施工安装",
+      "relation": "包含"
+    },
+    {
+      "source": "宽带新装流程",
+      "target": "验收网络",
+      "relation": "包含"
     }
   ]
 }

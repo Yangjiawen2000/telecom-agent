@@ -17,9 +17,9 @@ async def get_plans() -> List[Dict[str, Any]]:
         resp.raise_for_status()
         return resp.json()
 
-async def create_order(phone: str, plan_id: str, type: str = "new") -> Dict[str, Any]:
+async def create_order(phone: str, plan_id: str, type: str = "new", **kwargs) -> Dict[str, Any]:
     async with httpx.AsyncClient() as client:
-        payload = {"phone": phone, "plan_id": plan_id, "type": type}
+        payload = {"phone": phone, "plan_id": plan_id, "order_type": type}
         resp = await client.post("http://localhost:8001/order/create", json=payload, timeout=5.0)
         resp.raise_for_status()
         return resp.json()

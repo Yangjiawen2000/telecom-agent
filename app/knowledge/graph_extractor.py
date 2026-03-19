@@ -8,22 +8,27 @@ from app.llm import chat
 
 logger = logging.getLogger(__name__)
 
-# Prompt for entity-relationship extraction
+# Prompt for entity-relationship extraction with causal awareness
 EXTRACTION_PROMPT = """
-你是一个电信业务知识专家。请从以下文本中提取实体（Entity）以及它们之间的关系（Relationship）。
+你是一个电信业务知识专家。请从以下文本中提取实体（Entity）以及它们之间的关系（Relationship），特别关注**因果关系**和**触发条件**。
 
 输出格式必须是严格的 JSON 格式，包含以下字段：
-1. "entities": 实体列表，每个实体包含 "name" (名称) 和 "type" (类型，如：套餐、费用、业务、规则、用户类型、条件)。
-2. "relationships": 关系列表，每个关系包含 "source" (源实体名称), "target" (目标实体名称), "relation" (关系类型，如：包含, 要求, 冲突, 适用于, 属于, 赠送, 计费)。
+1. "entities": 实体列表，每个实体包含 "name" (名称) 和 "type" (类型，如：套餐、费用、业务、规则、用户类型、条件、状态、操作)。
+2. "relationships": 关系列表，每个关系包含 "source" (源实体名称), "target" (目标实体名称), "relation" (关系类型)。
+   特别增加以下关系类型用于因果推理：
+   - "导致" (Cause -> Effect): A 现象或操作直接引发 B 结果。
+   - "触发" (Trigger): A 条件满足时，B 动作被执行。
+   - "前提" (Precondition): A 是 B 发生或执行的必要条件。
+   - "由于" (Reason): B 的发生是因为 A。
+   - 以及常规关系：包含, 要求, 冲突, 适用于, 属于, 赠送, 计费。
 
 文本内容：
 {text}
 
 注意：
-- 只提取明确提到的关系。
+- 识别隐含的因果逻辑（如“若...则...”，“由于...导致...”，“发生...是因为...”）。
 - 确保实体名称在 entities 和 relationships 中保持一致。
-- 类型应具有代表性且简洁。
-- 如果没有提取到任何内容，返回空列表。
+- 如果没有提取到任何内容，返回空的 entities 和 relationships 列表。
 - 不要输出 Markdown 块，只输出原始 JSON 字符串。
 """
 

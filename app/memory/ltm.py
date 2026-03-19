@@ -212,3 +212,47 @@ class LongTermMemory:
             limit=limit
         )
         return res
+
+    async def search_causal_path(self, entity_name: str, depth: int = 2) -> List[Dict[str, Any]]:
+        """
+        递归搜索因果路径。
+        用于诊断问答：查找导致 A 的原因，或 A 导致的结果。
+        """
+        causal_relations = ["导致", "触发", "前提", "由于"]
+        visited = set()
+        results = []
+        
+        col = Collection("graph_relationships")
+        col.load()
+
+        queue = [(entity_name, depth)]
+        visited.add(entity_name)
+
+        while queue:
+            curr_name, curr_depth = queue.pop(0)
+            if curr_depth <= 0:
+                continue
+
+            # 查找直接关联的因果关系
+            res = col.query(
+                expr=f'source == "{curr_name}" or target == "{curr_name}"',
+                output_fields=["source", "target", "relation"],
+                limit=20
+            )
+
+            for r in res:
+                if r["relation"] in causal_relations:
+                    # 避免重复添加完全相同的关系
+                    rel_key = f"{r['source']}-{r['relation']}-{r['target']}"
+                    if any(f"{x['source']}-{x['relation']}-{x['target']}" == rel_key for x in results):
+                        continue
+                        
+                    results.append(r)
+                    
+                    # 确定下一个要探索的实体
+                    next_node = r["target"] if r["source"] == curr_name else r["source"]
+                    if next_node not in visited:
+                        visited.add(next_node)
+                        queue.append((next_node, curr_depth - 1))
+        
+        return results
