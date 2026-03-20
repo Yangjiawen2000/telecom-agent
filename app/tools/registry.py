@@ -81,9 +81,50 @@ class ToolRegistry:
                 fallback="规则引擎兜底"
             )
 
-    def list_tools(self) -> List[Dict[str, str]]:
+    def list_tools(self) -> List[Dict[str, Any]]:
         """列出所有工具供 LLM 选择"""
         return [
             {"name": name, "description": info["description"]}
             for name, info in self.tools.items()
         ]
+
+    def get_openai_tools(self, tool_names: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+        """将内部工具格式转换为 OpenAI function calling 格式"""
+        openai_tools = []
+        target_tools = {k: v for k, v in self.tools.items() if not tool_names or k in tool_names}
+        
+        for name, info in target_tools.items():
+            # 将简单字典转换为符合 JSON Schema 规范的格式
+            params = info["params_schema"]
+            properties = {}
+            required = []
+            
+            for p_name, p_type in params.items():
+                if p_type == "str":
+                    properties[p_name] = {"type": "string"}
+                elif p_type == "int":
+                    properties[p_name] = {"type": "integer"}
+                elif p_type == "float":
+                    properties[p_name] = {"type": "number"}
+                elif p_type == "bool":
+                    properties[p_name] = {"type": "boolean"}
+                else:
+                    properties[p_name] = {"type": "string"} # 兜底
+                
+                # 默认所有简单定义的参数都是必填的
+                required.append(p_name)
+
+            openai_tools.append({
+                "type": "function",
+                "function": {
+                    "name": name,
+                    "description": info["description"],
+                    "parameters": {
+                        "type": "object",
+                        "properties": properties,
+                        "required": required
+                    }
+                }
+            })
+            
+        return openai_tools

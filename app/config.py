@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     # Security
     SECRET_KEY: str = "secret"
 
+    # Mock API Settings
+    MOCK_API_HOST: str = "localhost"
+    MOCK_API_PORT: int = 8001
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 settings = Settings()

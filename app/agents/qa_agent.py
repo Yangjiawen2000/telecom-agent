@@ -92,7 +92,8 @@ class QAAgent(BaseAgent):
         messages.append({"role": "user", "content": user_input})
 
         # 9. 调用 LLM 生成回答
-        answer = await chat(messages, stream=False)
+        response = await chat(messages, stream=False)
+        answer = response.get("content", "")
 
         return {
             "answer": answer,

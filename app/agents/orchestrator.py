@@ -4,7 +4,7 @@ import logging
 import operator
 from typing import Dict, Any, List, Optional, TypedDict, Union, Annotated, AsyncGenerator
 from langgraph.graph import StateGraph, END
-from app.intent.classifier import IntentClassifier, IntentResult
+from app.intent.classifier import IntentClassifier, Intent, IntentResult
 from app.agents.qa_agent import QAAgent
 from app.agents.recommend_agent import RecommendAgent
 from app.agents.handle_agent import HandleAgent
@@ -12,6 +12,7 @@ from app.agents.billing_agent import BillingAgent
 from app.agents.arbitrator import ConflictArbitrator
 from app.memory.stm import ShortTermMemory
 from app.tools.registry import ToolRegistry
+from app.llm import chat
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +96,11 @@ class Orchestrator:
         tasks_map = {}
         
         for val in all_intents:
-            agent_name = self._map_intent_to_agent(val)
+            if val == Intent.QUERY_PLAN:
+                # 关键修复：套餐查询（特别是针对特定号码的）应由具备工具权限的账务专家处理，而非仅 RAG 的问答专家
+                agent_name = "billing_agent"
+            else:
+                agent_name = self._map_intent_to_agent(val)
             # 关键改进：每个智能体在这轮对话中只处理一次任务（按意图优先级）
             if agent_name in agent_assigned:
                 continue
@@ -214,7 +219,11 @@ class Orchestrator:
         # 逻辑：如果 HandleAgent 产出了内容且对话输入包含“确认/好的”等词，极大概率是业务办理成功
         is_confirmation = any(w in state["user_input"] for w in ["确认", "好的", "没问题", "确认办理"])
         
-        if handle_out and is_confirmation:
+        handle_done = False
+        if handle_out and is_confirmation and isinstance(handle_out.get("output"), dict):
+            handle_done = handle_out["output"].get("handle_state", {}).get("state") == "DONE"
+        
+        if handle_out and is_confirmation and handle_done:
             # 这种情况下，HandleAgent 的回复最专业且包含结构化办理结果，通常不需要 QAAgent 再通过 RAG 重复一遍“办理成功”
             data = handle_out["output"]
             final_msg_parts.append(self._get_text_content(data))
@@ -275,16 +284,32 @@ class Orchestrator:
             "tool_output": tool_output
         }
         
+        full_response = ""
         try:
             final_state = await self.graph.ainvoke(initial_state)
-            response = final_state.get("final_response", "抱歉，系统暂时无法处理您的请求。")
+            # 如果已经由于某些逻辑（如路由到 QA）产生了 final_response，直接流式输出它（此处由于是已生成的，仍需模拟流式，但之后我们可以优化专家本身）
+            # 或者更彻底：如果 expert_outputs 存在，由 Orchestrator 进行最后的流式汇总
+            expert_outputs = final_state.get("expert_outputs", [])
+            final_response = final_state.get("final_response", "")
+
+            if not final_response and expert_outputs:
+                # 实施“真流式汇总”
+                sources_text = "\n".join([f"专家[{o['agent']}]: {self._get_text_content(o['output'])}" for o in expert_outputs])
+                prompt = f"请根据以下多个专家的意见，统一汇总成一段专业、亲切的回复给用户。只需回复汇总内容，不要提及‘专家’等词汇。\n\n[专家意见]\n{sources_text}\n\n[用户输入]\n{user_input}"
+                
+                async for token in chat([{"role": "user", "content": prompt}], stream=True):
+                    full_response += token
+                    yield {"type": "token", "content": token}
+            elif final_response:
+                # 即使是已生成的结果，为了视觉连贯性，我们分成小块快速吐出
+                chunk_s = 4
+                for i in range(0, len(final_response), chunk_s):
+                    token = final_response[i:i + chunk_s]
+                    yield {"type": "token", "content": token}
+                    await asyncio.sleep(0.01) # 极短延迟
+                full_response = final_response
+            
             metadata = final_state.get("final_metadata", {})
-            
-            chunk_size = 10
-            for i in range(0, len(response), chunk_size):
-                yield {"type": "token", "content": response[i:i + chunk_size]}
-                await asyncio.sleep(0)
-            
             yield {"type": "metadata", "content": metadata}
                 
         except Exception as e:

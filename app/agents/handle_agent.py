@@ -45,69 +45,57 @@ class HandleAgent(BaseAgent):
                     if current_state == "INIT":
                         current_state = "COLLECTING"
 
-        # 3. 调用 LLM 驱动状态转换
+        # 3. 调用 LLM 驱动状态转换并自主调用工具
         system_prompt = f"""你是一个专业的电信业务办理专家。
 当前办理状态：{current_state}
 已收集数据：{form_data}
 
-【严格的状态机规则】
-1. INIT: 用户表达办卡或宽带办理意图时，必须立即跳转到 COLLECTING。
-2. COLLECTING: 你必须收集以下 4 个信息：
+【任务目标】
+你的主要任务是收集办理宽带/办卡所需的 4 个核心信息，并在收集完毕后，调用 `create_order` 工具完成办理，然后告知用户。
+
+【执行规则】
+1. 必须收集以下 4 个信息：
    - 姓名 (name)
    - 身份证号 (id_card)
    - 手机号 (phone)
    - 套餐ID (plan_id)
-   如果 {form_data} 中缺少上述任何一项，你必须在 message 中礼貌追问缺失项。只有当 4 项全部收集完毕时，才能跳转到 CONFIRMING。
-3. CONFIRMING: 4 项信息收齐后，必须在 message 中生成全量确认话术。
-4. SUBMITTING: 用户确认后，系统将自动处理。
-5. DONE: 办理完成。
-
-【输出格式强制要求】
-请返回纯 JSON 格式：
-{{
-  "state": "COLLECTING | CONFIRMING | SUBMITTING | DONE",
-  "form_data": {{ "name": "...", "id_card": "...", "phone": "...", "plan_id": "..." }},
-  "message": "回复给用户的文字",
-  "done": false
-}}
+2. 如果上述信息有缺失，你必须向用户礼貌追问缺失的信息。
+3. 当 4 项信息全部收集完毕，并且你向用户确认无误后，你必须调用 `create_order` 工具提交订单。
+4. 提交订单成功后，告知用户办理成功及订单号。
+5. 每次回复时，请在内部维护好状态，并输出专业、亲切的文字。
 """
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_input}
-        ]
-
-        response_text = await chat(messages, stream=False)
-        try:
-            clean_text = response_text.strip().replace("```json", "").replace("```", "")
-            result = json.loads(clean_text)
-            
-            # 特殊处理提交逻辑
-            if result.get("state") == "SUBMITTING":
-                params = result.get("form_data", {})
-                order_res = await self.tool_registry.call("create_order", params)
-                if order_res.success:
-                    result["state"] = "DONE"
-                    result["done"] = True
-                    order_id = order_res.data.get('order_id') if isinstance(order_res.data, dict) else "N/A"
-                    result["message"] = f"办理成功！订单号：{order_id}"
-                else:
-                    return {
-                        "need_switch": "qa_agent",
-                        "reason": f"下单失败：{order_res.error}，正在为您转接支持。"
-                    }
-            
-            # 标准化输出，供 Orchestrator 聚合并持久化
-            return {
-                "answer": result.get("message", ""),
-                "handle_state": {
-                    "state": result.get("state"),
-                    "form_data": result.get("form_data")
-                },
-                "confidence": 0.9
-            }
-        except Exception as e:
-            logger.error(f"HandleAgent error: {e}")
-            return {"answer": "办理逻辑异常，请稍后重试。", "confidence": 0.0}
+        
+        allowed_tools = ["create_order", "get_plans"]
+        
+        result = await self.autonomous_run(
+            user_input=user_input,
+            system_prompt=system_prompt,
+            tool_names=allowed_tools,
+            session_id=session_id,
+            user_id=user_id,
+            stm=stm,
+            max_iterations=4
+        )
+        
+        # 只有 create_order 工具成功时，才允许进入 DONE
+        create_order_attempted = "create_order" in result.get("used_tools", [])
+        create_order_success = "create_order" in result.get("successful_tools", [])
+        is_done = create_order_success
+        new_state = "DONE" if is_done else "COLLECTING"
+        answer = result["content"]
+        # 防护：LLM 即使“说成功了”，也要以工具调用成功为准
+        if create_order_attempted and not create_order_success:
+            answer = f"抱歉，订单提交失败（下单接口调用未成功）。\n{answer}"
+        
+        return {
+            "answer": answer,
+            "handle_state": {
+                "state": new_state,
+                "form_data": form_data # 这里为了简化，假设LLM在文本中收集，实际可由LLM输出结构化数据
+            },
+            "sources": result["used_tools"],
+            "confidence": result["confidence"]
+        }
 
     async def _extract_info_from_text(self, user_input: str, history: List[Dict]) -> Dict[str, str]:
         """通过 LLM 从对话历史文字中提取潜在的办理信息，作为元数据丢失时的兜底方案"""
@@ -127,8 +115,9 @@ class HandleAgent(BaseAgent):
 {{"name": null, "id_card": null, "phone": null, "plan_id": null}}
 """
         try:
-            res = await chat([{"role": "user", "content": prompt}], stream=False)
-            clean_res = res.strip().replace("```json", "").replace("```", "")
+            response = await chat([{"role": "user", "content": prompt}], stream=False)
+            content = response.get("content", "")
+            clean_res = content.strip().replace("```json", "").replace("```", "")
             return json.loads(clean_res)
         except:
             return {}

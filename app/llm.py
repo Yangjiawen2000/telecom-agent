@@ -43,7 +43,8 @@ class LLMClient:
     async def chat(self, 
                    messages: List[Dict[str, str]], 
                    stream: bool = False, 
-                   temperature: float = 1.0) -> Union[str, AsyncGenerator[str, None]]:
+                   temperature: float = 1.0,
+                   tools: Optional[List[Dict[str, Any]]] = None) -> Union[str, AsyncGenerator[str, None], Dict[str, Any]]:
         
         providers = [self.provider]
         # 如果当前是 kimi，把 qwen 作为备选
@@ -62,6 +63,8 @@ class LLMClient:
                 "stream": stream,
                 "temperature": final_temp
             }
+            if tools:
+                payload["tools"] = tools
             
             headers = {
                 "Authorization": f"Bearer {params['api_key']}",
@@ -83,8 +86,9 @@ class LLMClient:
                             
                         response.raise_for_status()
                         result = response.json()
-                        content = result["choices"][0]["message"]["content"]
-                        return content
+                        message = result["choices"][0]["message"]
+                        
+                        return message
                 else:
                     return self._stream_chat(headers, payload, params['base_url'], providers, p)
             except httpx.HTTPStatusError as e:
@@ -102,7 +106,7 @@ class LLMClient:
         
         if last_error is not None:
             raise last_error
-        return "Service temporarily unavailable."
+        return {"role": "assistant", "content": "抱歉，系统暂时无法响应，请稍后再试。"}
 
     async def _stream_chat(self, headers: dict, payload: dict, base_url: str, providers: list, current_p: str) -> AsyncGenerator[str, None]:
         try:
@@ -142,13 +146,22 @@ class LLMClient:
                             try:
                                 data = json.loads(data_str)
                                 chunk = data["choices"][0]["delta"].get("content", "")
-                                if chunk and isinstance(chunk, str):
+                                if chunk:
                                     yield chunk
-                            except Exception:
+                            except:
                                 continue
         except Exception as e:
-            logger.error(f"Stream error: {e}")
-            raise
+            logger.error(f"Stream error with {current_p}: {e}")
+            if current_p != providers[-1]:
+                next_p = providers[providers.index(current_p)+1]
+                params = self._get_provider_params(next_p)
+                new_headers = {"Authorization": f"Bearer {params['api_key']}", "Content-Type": "application/json"}
+                new_payload = payload.copy()
+                new_payload["model"] = params["model"]
+                async for token in self._stream_chat_raw(new_headers, new_payload, params['base_url']):
+                    yield token
+            else:
+                raise
 
     async def _stream_chat_raw(self, headers: dict, payload: dict, base_url: str) -> AsyncGenerator[str, None]:
         async with httpx.AsyncClient(timeout=60.0) as client:
@@ -190,14 +203,17 @@ class LLMClient:
             )
             response.raise_for_status()
             result = response.json()
-            return result["data"][0]["embedding"]
+            if "data" in result and len(result["data"]) > 0:
+                return result["data"][0]["embedding"]
+            raise ValueError(f"Unexpected embedding response: {result}")
 
 client = LLMClient()
 
 async def chat(messages: List[Dict[str, str]], 
              stream: bool = False, 
-             temperature: float = 1.0):
-    return await client.chat(messages, stream, temperature)
+             temperature: float = 1.0,
+             tools: Optional[List[Dict[str, Any]]] = None):
+    return await client.chat(messages, stream, temperature, tools)
 
 async def embed(text: str):
     return await client.embed(text)

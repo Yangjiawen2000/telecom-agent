@@ -82,7 +82,8 @@ class IntentClassifier:
         ]
         
         try:
-            response_text = await chat(messages, temperature=0.1)
+            response = await chat(messages, temperature=0.1)
+            response_text = response.get("content", "")
             # 处理可能的 markdown 标签
             clean_json = response_text.strip().replace("```json", "").replace("```", "").strip()
             data = json.loads(clean_json)
@@ -110,7 +111,8 @@ class IntentClassifier:
         ]
         
         try:
-            response_text = await chat(messages, temperature=0.1)
+            response = await chat(messages, temperature=0.1)
+            response_text = response.get("content", "")
             clean_json = response_text.strip().replace("```json", "").replace("```", "").strip()
             return json.loads(clean_json)
         except:

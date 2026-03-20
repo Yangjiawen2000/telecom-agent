@@ -48,7 +48,8 @@ class RecommendAgent(BaseAgent):
         ]
 
         # 3. 调用 LLM
-        response_text = await chat(messages, stream=False)
+        response = await chat(messages, stream=False)
+        response_text = response.get("content", "")
         
         # 4. 尝试解析 JSON
         try:
