@@ -4,33 +4,25 @@
 
 Telecom-Agent 是一个基于多智能体架构的智能客服系统，专为通信运营商设计。通过集成大语言模型（LLM）、向量数据库和多代理协作，实现高效、个性化的客户服务。系统支持意图识别、上下文记忆、多任务并行处理，并通过前后端分离架构提供流畅的用户体验。
 
-## 主要功能
+## 核心进展总结
 
-### 1. 多智能体协作
-- **QAAgent**: 问答代理，处理常见问题查询，从知识库检索答案。
-- **RecommendAgent**: 推荐代理，根据用户画像推荐套餐或服务。
-- **HandleAgent**: 处理代理，协助办理业务如套餐变更、投诉处理。
-- **BillingAgent**: 账单代理，查询费用、账单详情。
-- **Arbitrator**: 冲突仲裁器，协调多个代理的输出，避免矛盾。
+### 1. 业务系统仿真 (Mock API)
+*   **功能扩展**：完成了宽带办理、话费充值、停复机、携号转网校验、套餐变更共 5 大类、12 个接口的开发。
+*   **持久化增强**：引入了 SQLite 数据库 (`mock_business.db`)，实现业务数据的真实落盘与自动回显。
+*   **异常模拟**：支持模拟接口调用超时、失败等异常场景，用于测试 Agent 的容错能力。
 
-### 2. 意图识别与路由
-- 使用意图分类器自动识别用户查询类型（如查询账单、推荐套餐、办理业务）。
-- 基于意图动态调度相应代理，提高响应准确性。
+### 2. 核心智能体架构 (Autonomous ReAct)
+*   **自主推理循环**：重构了 `BillingAgent` 和 `HandleAgent`，实现了标准的 ReAct (Reason-Action-Observation) 闭环。Agent 能够根据需求主动思考、选择工具、处理结果并自我修正。
+*   **多专家协作控制**：通过 `Orchestrator` 实现多 Agent 并发调度，支持多意图并行处理与冲突仲裁。
 
-### 3. 记忆系统
-- **短期记忆 (STM)**: 基于Redis存储对话历史，支持记忆蒸馏和锚点标记。
-- **长期记忆 (LTM)**: 基于Milvus向量数据库存储用户画像和业务知识，支持语义搜索。
+### 3. 图驱动能力 (Graph Integration)
+*   **工作流编排**：使用 `LangGraph` 定义了确定的 FSM（有限状态机）调度流程。
+*   **GraphRAG**：实现了基于因果逻辑图的知识检索，极大提升了针对“由于/导致”类复杂业务逻辑的回答正确性。
 
-### 4. 工具集成
-- 集成外部工具如用户查询API、账单系统，确保数据实时准确。
-- 支持工具注册和动态调用。
-
-### 5. 聊天界面
-- React前端提供直观的聊天界面，支持流式回复、记忆锚点显示。
-- 支持多用户切换，记忆隔离。
-
-### 6. API接口
-- FastAPI后端提供RESTful API，支持流式聊天、历史查询、会话管理。
+### 4. 关键体验优化 (UX & Stability)
+*   **真流式输出 (Real Streaming)**：重构了 LLM 物理链路，首字响应时间降低 80%，实现 Token 级实时反馈。
+*   **路由精准修复**：修复了“套餐查询”意图误判、电话信息由于权限不足无法查库等关键 Bug。
+*   **协议标准化**：统一了 LLM 消息的字典交换协议，解决数据处理崩溃问题。
 
 ## 解决的痛点挑战
 
@@ -107,40 +99,44 @@ Telecom-Agent 是一个基于多智能体架构的智能客服系统，专为通
 - Docker Compose: Redis, Milvus, Postgres
 - 异步处理: Background Tasks
 
-## 安装与运行
+## 安装与运行指南
 
-### 环境要求
-- Python 3.11+
-- Node.js 18+
-- Docker
+### 1. 环境准备
+*   **Python**: 3.9 或更高版本。
+*   **Docker**: 用于启动基础数据库服务。
+*   **API Key**: 需要有效的 `QWEN_API_KEY`（在 `.env` 中配置）。
 
-### 步骤
-1. **启动基础设施**:
-   ```bash
-   make up
-   ```
+### 2. 安装与启动步骤
+1.  **安装 Python 依赖项**：
+    ```bash
+    pip install -r requirements.txt
+    ```
+2.  **启动基础设施服务**（Milvus, Redis, Postgres）：
+    ```bash
+    docker-compose up -d
+    ```
+3.  **初始化知识库数据**：
+    ```bash
+    make ingest
+    ```
 
-2. **安装后端依赖**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 3. 运行系统 (建议开启三个终端)
+*   **终端 1：启动 Mock 业务系统**：
+    ```bash
+    make mock-api
+    ```
+*   **终端 2：启动 Agent 核心后端**：
+    ```bash
+    make run
+    ```
+*   **终端 3：启动前端界面 (React)**：
+    ```bash
+    cd frontend && npm install && npm run dev
+    ```
 
-3. **启动后端**:
-   ```bash
-   PYTHONPATH=. python app/main.py
-   ```
-
-4. **安装前端依赖**:
-   ```bash
-   cd frontend && npm install
-   ```
-
-5. **启动前端**:
-   ```bash
-   npm run dev
-   ```
-
-6. **访问**: http://localhost:5173
+### 4. 访问方式
+*   **Web 界面**: `http://localhost:5173`
+*   **API 文档**: `http://localhost:8000/docs`
 
 ## 使用方法
 
