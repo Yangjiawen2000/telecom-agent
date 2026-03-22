@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     # Models
     KIMI_MODEL: str = "kimi-k2.5"
     QWEN_MODEL: str = "qwen3-max"
+    INTENT_MODEL: str = "moonshot-v1-8k"
+    MAIN_MODEL: str = "moonshot-v1-32k"
     EMBEDDING_MODEL: str = "text-embedding-v4"
 
     # Security
@@ -42,5 +44,14 @@ class Settings(BaseSettings):
     MOCK_API_PORT: int = 8001
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+
+def get_redis_client():
+    import redis.asyncio as redis
+    return redis.Redis(
+        host=settings.REDIS_HOST,
+        port=settings.REDIS_PORT,
+        decode_responses=True
+    )
 
 settings = Settings()

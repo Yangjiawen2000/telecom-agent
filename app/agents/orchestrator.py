@@ -32,6 +32,7 @@ class OrchestratorState(TypedDict):
     registry: ToolRegistry
     graph_context: str
     tool_output: Optional[Dict[str, Any]]
+    user_info: Optional[Dict[str, Any]]
 
 class Orchestrator:
     def __init__(self, registry: ToolRegistry):
@@ -75,6 +76,10 @@ class Orchestrator:
 
     async def intent_node(self, state: OrchestratorState):
         logger.info("--- Intent Node ---")
+        if state.get("intent_result"):
+            logger.info("Using pre-calculated intent result")
+            return {"fsm_state": "PLANNING"}
+            
         history = await state["stm"].get_history()
         intent_res = await self.classifier.classify(state["user_input"], history=history)
         return {"intent_result": intent_res, "fsm_state": "PLANNING"}
@@ -264,7 +269,9 @@ class Orchestrator:
         user_id: str,
         stm: ShortTermMemory,
         graph_context: str = "",
-        tool_output: Optional[Dict[str, Any]] = None
+        tool_output: Optional[Dict[str, Any]] = None,
+        intent_result: Optional[IntentResult] = None,
+        user_info: Optional[Dict[str, Any]] = None
     ) -> AsyncGenerator[Dict[str, Any], None]:
         initial_state: OrchestratorState = {
             "session_id": session_id,
@@ -281,18 +288,28 @@ class Orchestrator:
             "stm": stm,
             "registry": self.registry,
             "graph_context": graph_context,
-            "tool_output": tool_output
+            "tool_output": tool_output,
+            "intent_result": intent_result,
+            "user_info": user_info
         }
         
         full_response = ""
         try:
             final_state = await self.graph.ainvoke(initial_state)
-            # 如果已经由于某些逻辑（如路由到 QA）产生了 final_response，直接流式输出它（此处由于是已生成的，仍需模拟流式，但之后我们可以优化专家本身）
-            # 或者更彻底：如果 expert_outputs 存在，由 Orchestrator 进行最后的流式汇总
             expert_outputs = final_state.get("expert_outputs", [])
             final_response = final_state.get("final_response", "")
+            metadata = final_state.get("final_metadata", {})
 
-            if not final_response and expert_outputs:
+            # 优化：如果只有一个专家有输出且没有被 aggregate 节点汇总
+            # 直接使用该专家的输出，避免二次 LLM 汇总带来的 TTFT 延迟
+            if not final_response and len(expert_outputs) == 1:
+                out = expert_outputs[0]["output"]
+                final_response = self._get_text_content(out)
+                if isinstance(out, dict):
+                    expert_meta = {k: v for k, v in out.items() if k not in ["answer", "message"]}
+                    metadata.update(expert_meta)
+
+            if not final_response and len(expert_outputs) > 1:
                 # 实施“真流式汇总”
                 sources_text = "\n".join([f"专家[{o['agent']}]: {self._get_text_content(o['output'])}" for o in expert_outputs])
                 prompt = f"请根据以下多个专家的意见，统一汇总成一段专业、亲切的回复给用户。只需回复汇总内容，不要提及‘专家’等词汇。\n\n[专家意见]\n{sources_text}\n\n[用户输入]\n{user_input}"
@@ -302,14 +319,13 @@ class Orchestrator:
                     yield {"type": "token", "content": token}
             elif final_response:
                 # 即使是已生成的结果，为了视觉连贯性，我们分成小块快速吐出
-                chunk_s = 4
+                chunk_s = 8
                 for i in range(0, len(final_response), chunk_s):
                     token = final_response[i:i + chunk_s]
                     yield {"type": "token", "content": token}
-                    await asyncio.sleep(0.01) # 极短延迟
+                    await asyncio.sleep(0.005) 
                 full_response = final_response
             
-            metadata = final_state.get("final_metadata", {})
             yield {"type": "metadata", "content": metadata}
                 
         except Exception as e:

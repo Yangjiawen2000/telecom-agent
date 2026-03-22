@@ -95,7 +95,12 @@ class ConflictArbitrator:
 输出格式必须为 JSON: {{"winner": "task_id", "reason": "...", "confidence": 0.0}}
 """
         try:
-            response = await chat([{"role": "user", "content": prompt}])
+            from app.config import settings
+            response = await chat(
+                [{"role": "user", "content": prompt}],
+                model=settings.INTENT_MODEL,
+                max_tokens=200
+            )
             res_str = response.get("content", "")
             # 简单解析
             import json
@@ -137,7 +142,12 @@ class ConflictArbitrator:
         return dot_product / (norm1 * norm2)
 
     async def _check_logical_contradiction(self, t1: str, t2: str) -> bool:
+        from app.config import settings
         prompt = f"请判断以下两条关于电信业务的结论是否逻辑矛盾（例如一个说可行，一个说不可行）：\n1. {t1}\n2. {t2}\n只需回答 '是' 或 '否'。"
-        response = await chat([{"role": "user", "content": prompt}])
+        response = await chat(
+            [{"role": "user", "content": prompt}],
+            model=settings.INTENT_MODEL,
+            max_tokens=50
+        )
         res = response.get("content", "")
         return "是" in res

@@ -12,27 +12,7 @@ from app.memory.ltm import LongTermMemory
 from app.intent.classifier import IntentClassifier, Intent
 from app.tools.registry import ToolRegistry
 from app.tools.init_tools import register_all_tools
-from app.config import settings
-from app.agents.orchestrator import Orchestrator
-
-import redis.asyncio as redis
-
-router = APIRouter()
-logger = logging.getLogger(__name__)
-
-# ---------- 模块级单例 ----------
-ltm = LongTermMemory()
-classifier = IntentClassifier()
-registry = ToolRegistry()
-register_all_tools(registry)
-orchestrator = Orchestrator(registry=registry)
-
-def get_redis_client():
-    return redis.Redis(
-        host=settings.REDIS_HOST,
-        port=settings.REDIS_PORT,
-        decode_responses=True
-    )
+from app.config import settings, get_redis_client
 
 class ChatRequest(BaseModel):
     session_id: str
@@ -98,8 +78,73 @@ def _extract_phone(user_input: str, history: List[Dict]) -> Optional[str]:
 async def chat_message(request: ChatRequest, background_tasks: BackgroundTasks):
     return StreamingResponse(
         event_generator(request, background_tasks),
-        media_type="text/event-stream"
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive"
+        }
     )
+
+# ---------- 并行处理核心逻辑 ----------
+
+async def handle_message(session_id: str, user_id: str, message: str):
+    """
+    非流式处理函数，用于性能测试和同步调用
+    """
+    redis_client = get_redis_client()
+    try:
+        stm = ShortTermMemory(session_id, redis_client)
+        # 获取最近3轮对话（6条消息）
+        history = await stm.get_history(max_turns=6)
+        
+        # 第一阶段：并行执行意图识别、RAG、用户信息查询
+        graph_task = build_graph_context(message)
+        intent_task = classifier.classify(message, history=history)
+        user_task = ltm.get_user_context(user_id)
+        
+        results = await asyncio.gather(graph_task, intent_task, user_task, return_exceptions=True)
+        
+        graph_ctx_res = results[0] if not isinstance(results[0], Exception) else ("", "", False, False)
+        intent_res = results[1] if not isinstance(results[1], Exception) else IntentResult(intent=Intent.GENERAL_QA, confidence=0.5, reasoning="Fallback")
+        user_info = results[2] if not isinstance(results[2], Exception) else {}
+        
+        graph_context = graph_ctx_res[0]
+        
+        # 第二阶段：串行执行业务数据查询（如果需要）
+        tool_output = None
+        if intent_res.intent in [Intent.QUERY_PLAN, Intent.QUERY_BILL, Intent.COMPLAINT]:
+            entities = intent_res.entities if isinstance(intent_res.entities, dict) else {}
+            phone = entities.get("phone") or _extract_phone(message, history)
+            if phone:
+                res = await registry.call("get_user_info", {"phone": phone})
+                tool_output = res.data if res.success else {"error": res.error}
+
+        # 第三阶段：调用 Orchestrator 生成回复
+        full_response = ""
+        final_metadata = {}
+        async for chunk in orchestrator.run_stream(
+            user_input=message,
+            session_id=session_id,
+            user_id=user_id,
+            stm=stm,
+            graph_context=graph_context,
+            tool_output=tool_output,
+            intent_result=intent_res,
+            user_info=user_info
+        ):
+            if chunk["type"] == "token":
+                full_response += chunk["content"]
+            elif chunk["type"] == "metadata":
+                final_metadata = chunk["content"]
+        
+        return {
+            "answer": full_response,
+            "metadata": final_metadata,
+            "intent": intent_res.intent
+        }
+    finally:
+        await redis_client.aclose()
 
 async def event_generator(request: ChatRequest, background_tasks: BackgroundTasks):
     redis_client = get_redis_client()
@@ -110,13 +155,29 @@ async def event_generator(request: ChatRequest, background_tasks: BackgroundTask
 
         yield f"data: {json.dumps({'type': 'thinking', 'content': '正在加载上下文与识别意图...'}, ensure_ascii=False)}\n\n"
         stm = ShortTermMemory(session_id, redis_client)
-        history = await stm.get_history()
-        user_profile = await ltm.get_user_context(user_id)
+        # 优化：并行化第一阶段任务
+        history_task = stm.get_history(max_turns=6)
+        user_info_task = ltm.get_user_context(user_id)
+        
+        # 先拿历史，因为意图识别依赖历史
+        history = await history_task
+        
+        # 并行执行阶段 1
+        results = await asyncio.gather(
+            classifier.classify(user_input, history=history),
+            build_graph_context(user_input),
+            user_info_task,
+            return_exceptions=True
+        )
+        
+        intent_res = results[0] if not isinstance(results[0], Exception) else IntentResult(intent=Intent.GENERAL_QA, confidence=0.5, reasoning="Parallel Error")
+        graph_ctx_res = results[1] if not isinstance(results[1], Exception) else ("", "", False, False)
+        user_profile = results[2] if not isinstance(results[2], Exception) else {}
+        
+        graph_context, _, graph_hit, causal_hit = graph_ctx_res
 
-        intent_res = await classifier.classify(user_input, history=history)
         yield f"data: {json.dumps({'type': 'thinking', 'content': f'识别意图: {intent_res.intent} (置信度: {intent_res.confidence:.2f})'}, ensure_ascii=False)}\n\n"
 
-        graph_context, _, graph_hit, causal_hit = await build_graph_context(user_input)
         if causal_hit:
             yield f"data: {json.dumps({'type': 'thinking', 'content': '发现深度因果链路，正在进行逻辑诊断...'}, ensure_ascii=False)}\n\n"
         elif graph_hit:
@@ -146,7 +207,9 @@ async def event_generator(request: ChatRequest, background_tasks: BackgroundTask
             user_id=user_id,
             stm=stm,
             graph_context=graph_context,
-            tool_output=tool_output
+            tool_output=tool_output,
+            intent_result=intent_res,
+            user_info=user_profile
         ):
             if chunk["type"] == "token":
                 token = chunk["content"]

@@ -44,7 +44,9 @@ class LLMClient:
                    messages: List[Dict[str, str]], 
                    stream: bool = False, 
                    temperature: float = 1.0,
-                   tools: Optional[List[Dict[str, Any]]] = None) -> Union[str, AsyncGenerator[str, None], Dict[str, Any]]:
+                   tools: Optional[List[Dict[str, Any]]] = None,
+                   model: Optional[str] = None,
+                   max_tokens: Optional[int] = None) -> Union[str, AsyncGenerator[str, None], Dict[str, Any]]:
         
         providers = [self.provider]
         # 如果当前是 kimi，把 qwen 作为备选
@@ -54,17 +56,20 @@ class LLMClient:
         last_error = None
         for p in providers:
             params = self._get_provider_params(p)
+            final_model = model or params["model"]
             # For kimi-k2.5, temperature must be 1.0
-            final_temp = 1.0 if "kimi-k2.5" in params["model"] else temperature
+            final_temp = 1.0 if "kimi-k2.5" in final_model else temperature
             
             payload = {
-                "model": params["model"],
+                "model": final_model,
                 "messages": messages,
                 "stream": stream,
                 "temperature": final_temp
             }
             if tools:
                 payload["tools"] = tools
+            if max_tokens:
+                payload["max_tokens"] = max_tokens
             
             headers = {
                 "Authorization": f"Bearer {params['api_key']}",
@@ -109,8 +114,8 @@ class LLMClient:
         return {"role": "assistant", "content": "抱歉，系统暂时无法响应，请稍后再试。"}
 
     async def _stream_chat(self, headers: dict, payload: dict, base_url: str, providers: list, current_p: str) -> AsyncGenerator[str, None]:
-        try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            try:
                 async with client.stream(
                     "POST",
                     f"{base_url}/chat/completions",
@@ -118,21 +123,15 @@ class LLMClient:
                     json=payload
                 ) as response:
                     if response.status_code == 429 and current_p != providers[-1]:
-                         # 流式 fallback 较复杂，此处采用简单重试备选方案（非理想，但能工作）
                          next_p = providers[providers.index(current_p)+1]
                          logger.warning(f"Stream: Provider {current_p} rate limited. Falling back to {next_p}")
                          params = self._get_provider_params(next_p)
-                         # 递归调用 chat 重新开启非流式或新的流式（这里实际上应该重构逻辑，暂保持简单）
-                         # 为了不破坏 AsyncGenerator 结构，我们直接返回新的生成器循环
                          new_headers = {"Authorization": f"Bearer {params['api_key']}", "Content-Type": "application/json"}
                          new_payload = payload.copy()
                          new_payload["model"] = params["model"]
-                         # 如果是 kimi-k2.5，强制 temp 1.0
                          if "kimi-k2.5" in params["model"]:
                              new_payload["temperature"] = 1.0
                          
-                         # 这里是个 tricky 的地方，我们需要在 outer scope 处理
-                         # 但暂且尝试在此直接 yield from 新的 stream
                          async for token in self._stream_chat_raw(new_headers, new_payload, params['base_url']):
                              yield token
                          return
@@ -145,23 +144,25 @@ class LLMClient:
                                 break
                             try:
                                 data = json.loads(data_str)
-                                chunk = data["choices"][0]["delta"].get("content", "")
-                                if chunk:
-                                    yield chunk
+                                choices = data.get("choices", [])
+                                if choices:
+                                    token = choices[0].get("delta", {}).get("content", "")
+                                    if token:
+                                        yield token # 立即 yield
                             except:
                                 continue
-        except Exception as e:
-            logger.error(f"Stream error with {current_p}: {e}")
-            if current_p != providers[-1]:
-                next_p = providers[providers.index(current_p)+1]
-                params = self._get_provider_params(next_p)
-                new_headers = {"Authorization": f"Bearer {params['api_key']}", "Content-Type": "application/json"}
-                new_payload = payload.copy()
-                new_payload["model"] = params["model"]
-                async for token in self._stream_chat_raw(new_headers, new_payload, params['base_url']):
-                    yield token
-            else:
-                raise
+            except Exception as e:
+                logger.error(f"Stream error with {current_p}: {e}")
+                if current_p != providers[-1]:
+                    next_p = providers[providers.index(current_p)+1]
+                    params = self._get_provider_params(next_p)
+                    new_headers = {"Authorization": f"Bearer {params['api_key']}", "Content-Type": "application/json"}
+                    new_payload = payload.copy()
+                    new_payload["model"] = params["model"]
+                    async for token in self._stream_chat_raw(new_headers, new_payload, params['base_url']):
+                        yield token
+                else:
+                    raise
 
     async def _stream_chat_raw(self, headers: dict, payload: dict, base_url: str) -> AsyncGenerator[str, None]:
         async with httpx.AsyncClient(timeout=60.0) as client:
@@ -173,7 +174,11 @@ class LLMClient:
                         if data_str == "[DONE]": break
                         try:
                             data = json.loads(data_str)
-                            yield data["choices"][0]["delta"].get("content", "")
+                            choices = data.get("choices", [])
+                            if choices:
+                                token = choices[0].get("delta", {}).get("content", "")
+                                if token:
+                                    yield token
                         except: continue
 
     @retry(
@@ -212,8 +217,10 @@ client = LLMClient()
 async def chat(messages: List[Dict[str, str]], 
              stream: bool = False, 
              temperature: float = 1.0,
-             tools: Optional[List[Dict[str, Any]]] = None):
-    return await client.chat(messages, stream, temperature, tools)
+             tools: Optional[List[Dict[str, Any]]] = None,
+             model: Optional[str] = None,
+             max_tokens: Optional[int] = None):
+    return await client.chat(messages, stream, temperature, tools, model, max_tokens)
 
 async def embed(text: str):
     return await client.embed(text)
